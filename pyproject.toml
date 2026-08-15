@@ -1,0 +1,17 @@
+[project]
+name = "comfyui-hwp-nodes"
+version = "0.9.0"
+description = "HWP custom node pack for ComfyUI — global seed control and workflow utilities"
+authors = [{ name = "H.W. Prinz", email = "" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/hwprinz/ComfyUI-HWP-Nodes"
+
+[tool.comfy]
+PublisherId = "hwprinz"
+DisplayName = "HWP Nodes"
+Icon = ""
