@@ -12,9 +12,9 @@ except ImportError:
 _P = "\033[38;5;141m[HWP Global Seed]\033[38;5;41m "
 _R = "\033[0m"
 
-def _log(msg, extended=False, is_extended=False):
-    """Print a log line. If is_extended=True, only prints when extended=True."""
-    if is_extended and not extended:
+def _log(msg, verbose=False, is_verbose=False):
+    """Print a log line. If is_verbose=True, only prints when verbose=True."""
+    if is_verbose and not verbose:
         return
     logging.info(f"{_P}{msg}{_R}")
 
@@ -93,7 +93,7 @@ def prompt_seed_update(json_data):
     action = None
     max_seed = 0
     seed_is_global = False
-    extended = False
+    verbose = False
 
     for k, v in json_data['prompt'].items():
         if 'class_type' not in v:
@@ -104,11 +104,11 @@ def prompt_seed_update(json_data):
             action = v['inputs']['action']
             value = v['inputs']['value']
             max_seed = v['inputs'].get('max_seed', 0)
-            extended = v['inputs'].get('extended_logging', False)
+            verbose = v['inputs'].get('logging', False)
             node = k, v
             seed_is_global = True
-            _log(f"Found CustomGlobalSeed node: {k}", extended, is_extended=True)
-            _log(f"Settings - mode: {mode}, action: {action}, value: {value}, max_seed: {max_seed}", extended, is_extended=True)
+            _log(f"Found CustomGlobalSeed node: {k}", verbose, is_verbose=True)
+            _log(f"Settings - mode: {mode}, action: {action}, value: {value}, max_seed: {max_seed}", verbose, is_verbose=True)
             break
 
     if not seed_is_global:
@@ -119,7 +119,7 @@ def prompt_seed_update(json_data):
 
     if mode is not None and mode:
         used_seed = control_seed(node[1], action, seed_is_global, max_seed)
-        _log(f"control_before_generate - new value: {used_seed}", extended, is_extended=True)
+        _log(f"control_before_generate - new value: {used_seed}", verbose, is_verbose=True)
 
     nodes_updated = 0
     seed_generator = SeedGenerator(used_seed, action, max_seed)
@@ -132,24 +132,24 @@ def prompt_seed_update(json_data):
         if 'seed_num' in v['inputs'] and isinstance(v['inputs']['seed_num'], int):
             old = v['inputs']['seed_num']
             v['inputs']['seed_num'] = seed_generator.next()
-            _log(f"Updated seed_num in node {k}: {old} -> {v['inputs']['seed_num']}", extended, is_extended=True)
+            _log(f"Updated seed_num in node {k}: {old} -> {v['inputs']['seed_num']}", verbose, is_verbose=True)
             nodes_updated += 1
 
         if 'seed' in v['inputs'] and isinstance(v['inputs']['seed'], int):
             old = v['inputs']['seed']
             v['inputs']['seed'] = seed_generator.next()
-            _log(f"Updated seed in node {k}: {old} -> {v['inputs']['seed']}", extended, is_extended=True)
+            _log(f"Updated seed in node {k}: {old} -> {v['inputs']['seed']}", verbose, is_verbose=True)
             nodes_updated += 1
 
         if 'noise_seed' in v['inputs'] and isinstance(v['inputs']['noise_seed'], int):
             old = v['inputs']['noise_seed']
             v['inputs']['noise_seed'] = seed_generator.next()
-            _log(f"Updated noise_seed in node {k}: {old} -> {v['inputs']['noise_seed']}", extended, is_extended=True)
+            _log(f"Updated noise_seed in node {k}: {old} -> {v['inputs']['noise_seed']}", verbose, is_verbose=True)
             nodes_updated += 1
 
     if mode is not None and not mode:
         control_seed(node[1], action, seed_is_global, max_seed)
-        _log("control_after_generate - next seed prepared", extended, is_extended=True)
+        _log("control_after_generate - next seed prepared", verbose, is_verbose=True)
 
     global _last_dispatched_seed
     seed_changed = (_last_dispatched_seed is not None) and (used_seed != _last_dispatched_seed)
@@ -160,10 +160,10 @@ def prompt_seed_update(json_data):
     if seed_changed:
         _log(f"last/changed seed was: {prev_seed}")
 
-    return used_seed, extended
+    return used_seed, verbose
 
 
-def workflow_seed_update(json_data, used_seed, extended):
+def workflow_seed_update(json_data, used_seed, verbose):
     try:
         nodes = json_data['extra_data']['extra_pnginfo']['workflow']['nodes']
         seed_widget_map = json_data['extra_data']['extra_pnginfo']['workflow'].get('seed_widgets', {})
@@ -199,14 +199,15 @@ def workflow_seed_update(json_data, used_seed, extended):
                     updated_seed_map[node_id] = seed
 
         if global_seed_node_id:
-            _log(f"Sending update - Node: {global_seed_node_id}, used_seed: {used_seed}, next_value: {next_value}, Seeds: {updated_seed_map}", extended, is_extended=True)
+            _log(f"Sending update - Node: {global_seed_node_id}, used_seed: {used_seed}, next_value: {next_value}, Seeds: {updated_seed_map}", verbose, is_verbose=True)
             try:
                 server.PromptServer.instance.send_sync("custom-global-seed", {
                     "id": global_seed_node_id,
                     "value": next_value,
-                    "seed_map": updated_seed_map
+                    "seed_map": updated_seed_map,
+                    "logging": verbose
                 })
-                _log("send_sync called successfully", extended, is_extended=True)
+                _log("send_sync called successfully", verbose, is_verbose=True)
             except Exception as e:
                 _log(f"send_sync error: {e}")
     except Exception as e:
@@ -215,9 +216,9 @@ def workflow_seed_update(json_data, used_seed, extended):
 
 def onprompt(json_data):
     try:
-        used_seed, extended = prompt_seed_update(json_data)
+        used_seed, verbose = prompt_seed_update(json_data)
         if used_seed is not None:
-            workflow_seed_update(json_data, used_seed, extended)
+            workflow_seed_update(json_data, used_seed, verbose)
     except Exception as e:
         _log(f"onprompt error: {e}")
         import traceback
@@ -238,7 +239,7 @@ class CustomGlobalSeed:
                 "action": (["fixed", "increment", "decrement", "randomize", "increment for each node", "decrement for each node", "randomize for each node"],),
                 "last_seed": ("STRING", {"default": "", "multiline": False}),
                 "max_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "tooltip": "Maximum seed value (0 = default: 1125899906842624)"}),
-                "extended_logging": ("BOOLEAN", {"default": False, "label_on": "extended", "label_off": "minimal"}),
+                "logging": ("BOOLEAN", {"default": False, "label_on": "verbose", "label_off": "default"}),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
@@ -252,7 +253,9 @@ class CustomGlobalSeed:
     FUNCTION = "execute"
     CATEGORY = "HWP"
 
-    def execute(self, value, mode=True, action="fixed", last_seed="", max_seed=0, extended_logging=False, unique_id=None, extra_pnginfo=None):
+    # 'logging' must match the input key; it shadows the module import, which is
+    # fine here because execute() only logs via _log().
+    def execute(self, value, mode=True, action="fixed", last_seed="", max_seed=0, logging=False, unique_id=None, extra_pnginfo=None):
         noise = Noise_RandomNoise(value) if Noise_RandomNoise is not None else None
         if noise is None:
             _log("NOISE output unavailable - comfy_extras.nodes_custom_sampler.Noise_RandomNoise could not be imported")

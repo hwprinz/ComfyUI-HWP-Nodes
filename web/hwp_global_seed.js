@@ -110,7 +110,7 @@ app.registerExtension({
     // -----------------------------------------------------------------------
     async setup() {
         api.addEventListener("custom-global-seed", ({ detail }) => {
-            const { id, value, seed_map, extended_logging } = detail;
+            const { id, value, seed_map, logging: verbose } = detail;
 
             // Track whether the seed changed this run, and what the previous seed was.
             let _seedChanged = false;
@@ -150,7 +150,7 @@ app.registerExtension({
                         _lastKnownSeed = value;
                     }
 
-                    if (extended_logging) {
+                    if (verbose) {
                         console.log("[HWP Global Seed] global seed node updated:", node);
                     }
                 } else {
@@ -168,7 +168,7 @@ app.registerExtension({
                         const seedWidget = findWidget(node, "seed", "seed_num", "noise_seed");
                         if (seedWidget) {
                             setWidgetValue(seedWidget, seedValue);
-                            if (extended_logging) {
+                            if (verbose) {
                                 console.log(`[HWP Global Seed] node ${nodeId} ${seedWidget.name} →`, seedValue);
                             }
                         } else {
@@ -181,7 +181,7 @@ app.registerExtension({
             }
 
             // ---------------------------------------------------------------
-            // Minimal log — one line always, second line only when seed changed
+            // Default log — one line always, second line only when seed changed
             // ---------------------------------------------------------------
             const nodeCount = 1 + (seed_map ? Object.keys(seed_map).length : 0);
             const stateWord = _seedChanged ? "updated" : "unchanged";
