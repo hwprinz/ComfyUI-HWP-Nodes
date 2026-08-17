@@ -6,8 +6,24 @@ Custom node pack for ComfyUI by [hwprinz](https://github.com/hwprinz).
 
 ### HWP Global Seed
 Global seed controller for ComfyUI workflows. Distributes a single seed value
-to all sampler nodes, with increment / decrement / randomize modes and
-per-node seed variants.
+to every other seed / seed_num / noise_seed widget in the workflow, so you
+only need to manage one seed control instead of one per sampler.
+
+Inputs:
+- `value` (`INT`) — the base seed.
+- `mode` (`control_before_generate` / `control_after_generate`) — whether the
+  next seed is computed before this run's prompt is sent (so this run uses
+  the new value) or after (so this run uses the current value, and the next
+  one is prepared for the following queue).
+- `action` — `fixed`, `increment`, `decrement`, `randomize`, or their
+  `... for each node` variants. The plain variants advance one shared value
+  for every node; the `for each node` variants give each downstream seed
+  widget its own successive value (e.g. `increment for each node` hands out
+  `value`, `value+1`, `value+2`, ...).
+- `max_seed` — wraps increment/decrement at this ceiling (default
+  `1125899906842624` when left at `0`).
+- `logging` — `default` logs one summary line per run; `verbose` also logs
+  per-node seed updates.
 
 Outputs:
 - `seed` (`INT`) — the resolved seed value.
