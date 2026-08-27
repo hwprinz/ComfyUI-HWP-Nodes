@@ -16,9 +16,17 @@ A small collection of custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI
 
 ---
 
+## Finding the nodes
+
+All nodes are registered under the `HWP` category. To find them, just type `HWP` into the node search (right-click canvas → Add Node):
+
+![Preview](screenshots/search_nodes.png)
+
+---
+
 ## HWP Global Seed
 
-**File:** `nodes/global_seed.py` · **Category:** utils
+**File:** `nodes/global_seed.py` · **Category:** HWP
 
 Global seed controller for ComfyUI workflows. Distributes a single seed value to every other `seed` / `seed_num` / `noise_seed` widget in the workflow, so you only need to manage one seed control instead of one per sampler.
 
@@ -48,12 +56,9 @@ The plain `action` variants advance one shared value for every node. The `... fo
 
 ## HWP Seed Node
 
-**File:** `nodes/seed_node.py` · **Category:** utils
+**File:** `nodes/seed_node.py` · **Category:** HWP
 
-A **local** seed + noise source — the non-global counterpart of HWP Global Seed. Exposes the same `seed`/`noise` outputs and the same `fixed`/`increment`/`decrement`/`randomize` actions, but does **not** broadcast anything: the outputs only reach the node(s) you explicitly wire them to. Use it when you want a controllable seed for one specific sampler without touching the rest of the workflow.
-
-![Preview](screenshots/seed_node.png)
-<!-- TODO: screenshot of the node -->
+A **local** seed + noise source — the non-global counterpart of HWP Global Seed. It looks and behaves like HWP Global Seed (see screenshot above) — the only difference is that it does **not** broadcast anything: the outputs only reach the node(s) you explicitly wire them to. It exposes the same `seed`/`noise` outputs and the same `fixed`/`increment`/`decrement`/`randomize` actions. Use it when you want a controllable seed for one specific sampler without touching the rest of the workflow.
 
 ### Inputs
 
@@ -76,7 +81,7 @@ A **local** seed + noise source — the non-global counterpart of HWP Global See
 
 ## HWP Get Side (Latent)
 
-**File:** `nodes/get_side_from_latent.py` · **Category:** utils
+**File:** `nodes/get_side_from_latent.py` · **Category:** HWP
 
 Takes a `LATENT` input and returns either its longest or shortest pixel-space dimension (auto-converted from latent space via ×8), selected with a longest/shortest toggle.
 
@@ -97,7 +102,7 @@ Takes a `LATENT` input and returns either its longest or shortest pixel-space di
 
 ## HWP Get Side (X/Y)
 
-**File:** `nodes/get_side_from_xy.py` · **Category:** utils
+**File:** `nodes/get_side_from_xy.py` · **Category:** HWP
 
 Takes `width`/`height` integers and returns either the longest or shortest of the two, selected with the same longest/shortest toggle.
 

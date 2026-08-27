@@ -1,28 +1,3 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-
-# VS Code
-.vscode/
-.claude/
-
-# Environment
-.env
-.venv/
-
-# OS
-.DS_Store
 Thumbs.db
-
-# ComfyUI / local dev artifacts
-*.zip
-*.log
-
-# Local planning docs (not for the public repo)
-*_Interview.md
+__pycache__/
+*.pyc
