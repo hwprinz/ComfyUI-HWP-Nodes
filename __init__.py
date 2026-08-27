@@ -85,4 +85,4 @@ def _rainbow(text, white=""):
 
 _node_count = len(NODE_CLASS_MAPPINGS)
 _node_word = "node" if _node_count == 1 else "nodes"
-logging.info(_rainbow(f"[ComfyUI-HWP] {_node_count} {_node_word} v{__version__} registered.", __version__))
+logging.info(_rainbow(f"[ComfyUI-HWP-Nodes] {_node_count} {_node_word} v{__version__} registered.", __version__))
