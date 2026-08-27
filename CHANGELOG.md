@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-08-27
+
+### Changed
+- README updated (reworked node documentation with tables and a node-search section), screenshots added.
+
 ## [0.9.3] - 2026-08-25
 
 ### Added
