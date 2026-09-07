@@ -85,6 +85,8 @@ A **local** seed + noise source — the non-global counterpart of HWP Global See
 
 Takes a `LATENT` input and returns either its longest or shortest pixel-space dimension (auto-converted from latent space via ×8), selected with a longest/shortest toggle.
 
+The computed value is also displayed below the node after a run (bare number, like the built-in `Get Image Size` node).
+
 ### Inputs
 
 | Input | Type | Default | Description |
@@ -105,6 +107,8 @@ Takes a `LATENT` input and returns either its longest or shortest pixel-space di
 **File:** `nodes/get_side_from_xy.py` · **Category:** HWP
 
 Takes `width`/`height` integers and returns either the longest or shortest of the two, selected with the same longest/shortest toggle.
+
+The computed value is also displayed below the node after a run (bare number, like the built-in `Get Image Size` node).
 
 ### Inputs
 

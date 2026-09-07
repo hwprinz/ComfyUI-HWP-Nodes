@@ -5,10 +5,14 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.5] - 2026-09-07
+
+### Added
+- **HWP Get Side (Latent)** and **HWP Get Side (X/Y)** now display their output value below the node (bare number, no label) after a run, like the built-in `Get Image Size` node. Older ComfyUI versions without this feature are unaffected — the display is skipped instead of erroring.
 
 ### Changed
-- Startup banner now reads `[ComfyUI-HWP] <n> node(s) v<version> registered.` — the node count is derived from `NODE_CLASS_MAPPINGS` and the rainbow gradient is generated at runtime, so both stay in sync automatically with no manual re-styling when nodes or the version change.
+- Startup banner now reads `[ComfyUI-HWP-Nodes] <n> node(s) v<version> registered.` — the node count is derived from `NODE_CLASS_MAPPINGS` and the rainbow gradient is generated at runtime, so both stay in sync automatically with no manual re-styling when nodes or the version change.
+- **HWP Get Side (Latent)** and **HWP Get Side (X/Y)**: removed a leftover "drop this file into custom_nodes" install note from the docstrings (leftover from before the nodes were consolidated into this pack).
 
 ## [0.9.4] - 2026-08-27
 
