@@ -14,4 +14,4 @@ Repository = "https://github.com/hwprinz/ComfyUI-HWP-Nodes"
 [tool.comfy]
 PublisherId = "hwprinz"
 DisplayName = "HWP Nodes"
-Icon = "https://raw.githubusercontent.com/hwprinz/ComfyUI-HWP-Nodes/master/icon.svg"
+Icon = "https://raw.githubusercontent.com/hwprinz/ComfyUI-HWP-Nodes/master/icon.png"
