@@ -27,6 +27,22 @@ function findWidget(node, ...names) {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: hide/show a widget in a way every frontend generation honours
+// ---------------------------------------------------------------------------
+// The current (Vue) frontend checks `widget.options.hidden` — that is what
+// the core itself uses to hide widgets (e.g. the Painter node's preview
+// widgets). Older frontends check `widget.hidden`. No frontend generation
+// honours a bare `widget.hide`, so set both: the running frontend reads the
+// one it knows, the other is just an ignored attribute.
+function setWidgetHidden(widget, hidden) {
+    if (!widget) return;
+    widget.hidden = hidden;
+    if (widget.options) {
+        widget.options.hidden = hidden;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Extension
 // ---------------------------------------------------------------------------
 app.registerExtension({
@@ -48,11 +64,11 @@ app.registerExtension({
             const qualityIgnored = ["webp (lossless)", "tiff", "ico"];
 
             const sync = () => {
-                icoWidget.hide = formatWidget.value !== "ico";
-                if (qualityWidget) {
-                    qualityWidget.hide =
-                        qualityIgnored.includes(formatWidget.value);
-                }
+                setWidgetHidden(icoWidget, formatWidget.value !== "ico");
+                setWidgetHidden(
+                    qualityWidget,
+                    qualityIgnored.includes(formatWidget.value)
+                );
                 // Legacy frontends don't auto-resize when a widget is hidden;
                 // in the new (Lit) frontend this is a harmless no-op.
                 try {
