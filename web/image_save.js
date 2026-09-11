@@ -3,11 +3,15 @@ import { app } from "../../scripts/app.js";
 // ---------------------------------------------------------------------------
 // HWP Save Image (Advanced) — client-side niceties
 //
-// The `ico_sizes` widget only makes sense when `format` is `ico`; leaving it
-// visible at all times reads as if the output were always an ICO (or as if
-// the field had to be filled in). Hide it until `format` is `ico`. The value
-// is still serialized and sent to the backend, where it is simply ignored
-// for every other format.
+// Hide widgets that the selected `format` ignores:
+// - `ico_sizes` only makes sense when `format` is `ico` (leaving it visible
+//   at all times reads as if the output were always an ICO, or as if the
+//   field had to be filled in)
+// - `quality` is ignored by `webp (lossless)`, `tiff` and `ico` (lossless /
+//   fixed compression) — only png (compression level), jpg and webp use it
+//
+// The hidden values are still serialized and sent to the backend, where
+// they are simply ignored for the formats that don't use them.
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
@@ -35,12 +39,20 @@ app.registerExtension({
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
 
-            const formatWidget = findWidget(this, "format");
-            const icoWidget    = findWidget(this, "ico_sizes");
+            const formatWidget  = findWidget(this, "format");
+            const qualityWidget = findWidget(this, "quality");
+            const icoWidget     = findWidget(this, "ico_sizes");
             if (!formatWidget || !icoWidget) return;
+
+            // formats whose encoding ignores the quality widget
+            const qualityIgnored = ["webp (lossless)", "tiff", "ico"];
 
             const sync = () => {
                 icoWidget.hide = formatWidget.value !== "ico";
+                if (qualityWidget) {
+                    qualityWidget.hide =
+                        qualityIgnored.includes(formatWidget.value);
+                }
                 // Legacy frontends don't auto-resize when a widget is hidden;
                 // in the new (Lit) frontend this is a harmless no-op.
                 try {

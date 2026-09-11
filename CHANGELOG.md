@@ -12,6 +12,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   - Formats: `png`, `jpg`, `webp`, `webp (lossless)`, `tiff` (LZW lossless), `ico` (multi-resolution presets 32/48/64, 64/128/256, 128/256/512)
   - ICO entries are resampled by PIL from the **full-resolution source image** (other packs pre-resize and end up upscaling from the smallest entry — broken multi-resolution output)
   - The `ico_sizes` widget is hidden until `format` is set to `ico`, so the node never looks like it wants an ICO preset for non-ICO output
+  - The `quality` widget is hidden for the formats that ignore it (`webp (lossless)`, `tiff`, `ico`) — only `png` (as compression level), `jpg` and `webp` use it
+  - Sensible defaults when a node opens: `quality` 100, `ico_sizes` `Medium (64, 128, 256)`
   - `%date` / `%time` tokens in `custom_path` and `filename_prefix`
   - Optional filename timestamp: none, second, or millisecond
   - Per-format quality control (PNG compression level, JPG quality 4:4:4, WEBP quality; TIFF/ICO use lossless encoding)
