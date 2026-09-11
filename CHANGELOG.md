@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **HWP Save Image (Advanced)** — terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced)`, extended with TIFF, WEBP and multi-resolution ICO output:
+  - Formats: `png`, `jpg`, `webp`, `webp (lossless)`, `tiff` (LZW lossless), `ico` (multi-resolution presets 32/48/64, 64/128/256, 128/256/512)
+  - ICO entries are resampled by PIL from the **full-resolution source image** (other packs pre-resize and end up upscaling from the smallest entry — broken multi-resolution output)
+  - `%date` / `%time` tokens in `custom_path` and `filename_prefix`
+  - Optional filename timestamp: none, second, or millisecond
+  - Per-format quality control (PNG compression level, JPG quality 4:4:4, WEBP quality; TIFF/ICO use lossless encoding)
+  - Optional workflow metadata (PNG text chunks / EXIF `UserComment` JSON, same layout as Apolonia's save nodes) — honours the core `--disable-metadata` flag; ICO cannot store metadata and logs a warning if requested
+  - Optional invisible **blind watermark** (QR payload spread across the full RGB image, so lossless PNG output preserves it; extractable with the `blind_watermark` library using `password_img=1`, `password_wm=1` — compatible with the watermarks already used in the Apolonia ecosystem; images too small to carry the payload are saved without it, with a warning)
+  - Optional UI preview image when saving to a `custom_path` (batch bug fixed: the preview temp dir is created once, so multi-image batches keep every preview)
+  - JPEG alpha is composited over white instead of discarded to black
+  - Per-file `-> Saved image to <full path>` log lines via `logging` (no `print`)
+
 ## [0.9.5] - 2026-09-07
 
 ### Added

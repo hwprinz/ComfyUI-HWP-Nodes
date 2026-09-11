@@ -1,6 +1,6 @@
 # ComfyUI-HWP-Nodes
 
-A small collection of custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI) nodes by [hwprinz](https://github.com/hwprinz), focused on seed/noise control and simple latent/size utilities.
+A small collection of custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI) nodes by [hwprinz](https://github.com/hwprinz), covering seed/noise control, simple latent/size utilities, and an advanced multi-format image save node.
 
 ![Preview](screenshots/nodes.png)
 <!-- TODO: add a screenshot showing the nodes in a workflow, then update the path above -->
@@ -13,6 +13,7 @@ A small collection of custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI
 | [HWP Seed Node](nodes/seed_node.py) | `seed_node.py` | Local (non-broadcasting) seed + noise source for a single sampler |
 | [HWP Get Side (Latent)](nodes/get_side_from_latent.py) | `get_side_from_latent.py` | Returns the longest/shortest pixel-space dimension of a `LATENT` |
 | [HWP Get Side (X/Y)](nodes/get_side_from_xy.py) | `get_side_from_xy.py` | Returns the longest/shortest of a `width`/`height` pair |
+| [HWP Save Image (Advanced)](nodes/image_save.py) | `image_save.py` | Multi-format save (PNG/JPG/WEBP/TIFF/ICO) with timestamps, metadata, blind watermark and per-file logging |
 
 ---
 
@@ -123,6 +124,49 @@ The computed value is also displayed below the node after a run (bare number, li
 | Output | Type | Description |
 |---|---|---|
 | `side` | INT | The selected value |
+
+---
+
+## HWP Save Image (Advanced)
+
+**File:** `nodes/image_save.py` · **Category:** HWP
+
+An advanced terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced)`, extended with **TIFF**, **WEBP** and **multi-resolution ICO** output. Unlike the core `Save Image` node it writes exactly the file the widget says, keeps a per-file `-> Saved image to <full path>` log line for every written file, and supports timestamped filenames, workflow metadata and an invisible blind watermark.
+
+![Preview](screenshots/image_save.png)
+<!-- TODO: screenshot of the node in a workflow -->
+
+### Inputs
+
+| Input | Type | Default | Description |
+|---|---|---|---|
+| `images` | IMAGE | — | The image batch to save (one file per image) |
+| `custom_path` | STRING | `""` | Directory to save into (created if missing); empty = ComfyUI's `output/` folder. Supports `%date` and `%time` tokens |
+| `filename_prefix` | STRING | `comfyui` | Base filename; also supports `%date` and `%time` tokens |
+| `timestamp` | ENUM | `None` | Appends `_NNNNN` (counter), `_YYYY-MM-DD_HH-MM-SS` (second) or `_YYYY-MM-DD_HH-MM-SS-mmm` (millisecond) to the filename |
+| `format` | ENUM | `png` | `png`, `jpg`, `webp`, `webp (lossless)`, `tiff`, `ico` |
+| `quality` | INT | `80` | See the per-format table below |
+| `ico_sizes` | ENUM | `Large (128, 256, 512)` | ICO resolution preset — only used when `format` is `ico` |
+| `meta_data` | BOOLEAN | `False` | Embed the workflow prompt + metadata (PNG text chunks, or EXIF `UserComment` JSON for jpg/webp/tiff). Honours the core `--disable-metadata` flag. ICO cannot store metadata (a warning is logged) |
+| `blind_watermark` | STRING | `""` | Text to embed invisibly (QR payload spread across the full RGB image — lossless PNG output preserves it). Extractable with the [`blind_watermark`](https://pypi.org/project/blind-watermark/) library using `password_img=1`, `password_wm=1`; images too small to carry the payload are saved without it (a warning is logged) |
+| `preview` | BOOLEAN | `True` | Show a result image in the UI. When saving to a `custom_path` the real files land there and a PNG preview is shown instead (saved to temp) |
+
+**No output.** This is a terminal node.
+
+### Formats and quality
+
+| Format | Extension | Quality widget | Encoding |
+|---|---|---|---|
+| `png` | `.png` | compression level `(100 − q) // 10` (q 100 → level 0) | lossless, alpha preserved |
+| `jpg` | `.jpg` | JPEG quality | 4:4:4 (`subsampling=0`); RGBA is composited over white |
+| `webp` | `.webp` | WEBP quality | lossy, `method=6` (slowest, best ratio), alpha preserved |
+| `webp (lossless)` | `.webp` | ignored | lossless, `method=6`, alpha preserved |
+| `tiff` | `.tiff` | ignored | LZW — lossless, suited for final archive quality, alpha preserved |
+| `ico` | `.ico` | ignored | multi-resolution ICO, 32-bit RGBA |
+
+**ICO multi-resolution:** the `ico_sizes` preset picks the embedded sizes (e.g. `Small (32, 48, 64)`). Every size is resampled by PIL directly from the **full-resolution source image** — some other packs pre-resize the frames first and end up upscaling from the smallest entry, which is why their "multi-resolution" output looks soft; that defect does not apply here.
+
+**Metadata layout:** PNG files get the prompt and each `extra_pnginfo` key as text chunks; JPG/WEBP/TIFF get a JSON blob `{"prompt": …, …extra_pnginfo}` in the EXIF `UserComment` tag (same layout as the other HWP-ecosystem save nodes).
 
 ---
 

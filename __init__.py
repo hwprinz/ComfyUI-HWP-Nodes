@@ -17,6 +17,7 @@ from .nodes.seed_node import (
 )
 from .nodes.get_side_from_latent import GetSideFromLatent
 from .nodes.get_side_from_xy import GetSideFromXY
+from .nodes.image_save import HWPImageSave
 
 # ---------------------------------------------------------------------------
 # Node registration
@@ -26,6 +27,7 @@ NODE_CLASS_MAPPINGS = {
     "HWPSeedNode": HWPSeedNode,
     "GetSideFromLatent": GetSideFromLatent,
     "GetSideFromXY": GetSideFromXY,
+    "HWPImageSave": HWPImageSave,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -33,6 +35,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "HWPSeedNode": "HWP Seed Node",
     "GetSideFromLatent": "HWP Get Side (Latent)",
     "GetSideFromXY": "HWP Get Side (X/Y)",
+    "HWPImageSave": "HWP Save Image (Advanced)",
 }
 
 WEB_DIRECTORY = "./web"

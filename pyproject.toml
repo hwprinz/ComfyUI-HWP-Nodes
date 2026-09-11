@@ -6,7 +6,7 @@ authors = [{ name = "H.W. Prinz", email = "" }]
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["qrcode", "blind-watermark"]
 
 [project.urls]
 Repository = "https://github.com/hwprinz/ComfyUI-HWP-Nodes"
