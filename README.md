@@ -146,7 +146,7 @@ An advanced terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced
 | `timestamp` | ENUM | `None` | Appends `_NNNNN` (counter), `_YYYY-MM-DD_HH-MM-SS` (second) or `_YYYY-MM-DD_HH-MM-SS-mmm` (millisecond) to the filename |
 | `format` | ENUM | `png` | `png`, `jpg`, `webp`, `webp (lossless)`, `tiff`, `ico` |
 | `quality` | INT | `80` | See the per-format table below |
-| `ico_sizes` | ENUM | `Large (128, 256, 512)` | ICO resolution preset — only used when `format` is `ico` |
+| `ico_sizes` | ENUM | `Large (128, 256, 512)` | ICO resolution preset — hidden in the UI until `format` is `ico` (the value is still sent and ignored for other formats) |
 | `meta_data` | BOOLEAN | `False` | Embed the workflow prompt + metadata (PNG text chunks, or EXIF `UserComment` JSON for jpg/webp/tiff). Honours the core `--disable-metadata` flag. ICO cannot store metadata (a warning is logged) |
 | `blind_watermark` | STRING | `""` | Text to embed invisibly (QR payload spread across the full RGB image — lossless PNG output preserves it). Extractable with the [`blind_watermark`](https://pypi.org/project/blind-watermark/) library using `password_img=1`, `password_wm=1`; images too small to carry the payload are saved without it (a warning is logged) |
 | `preview` | BOOLEAN | `True` | Show a result image in the UI. When saving to a `custom_path` the real files land there and a PNG preview is shown instead (saved to temp) |

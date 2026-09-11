@@ -11,6 +11,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 - **HWP Save Image (Advanced)** — terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced)`, extended with TIFF, WEBP and multi-resolution ICO output:
   - Formats: `png`, `jpg`, `webp`, `webp (lossless)`, `tiff` (LZW lossless), `ico` (multi-resolution presets 32/48/64, 64/128/256, 128/256/512)
   - ICO entries are resampled by PIL from the **full-resolution source image** (other packs pre-resize and end up upscaling from the smallest entry — broken multi-resolution output)
+  - The `ico_sizes` widget is hidden until `format` is set to `ico`, so the node never looks like it wants an ICO preset for non-ICO output
   - `%date` / `%time` tokens in `custom_path` and `filename_prefix`
   - Optional filename timestamp: none, second, or millisecond
   - Per-format quality control (PNG compression level, JPG quality 4:4:4, WEBP quality; TIFF/ICO use lossless encoding)
