@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.6] - 2026-09-11
 
 ### Added
 - **HWP Save Image (Advanced)** — terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced)`, extended with TIFF, WEBP and multi-resolution ICO output:
