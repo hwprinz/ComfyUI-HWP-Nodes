@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Release automation: GitHub Actions workflow (`.github/workflows/publish-comfy-registry.yml`) that publishes the pack to the Comfy Registry automatically on every `v*` tag push, using the pushed commit message as the version changelog; can also be triggered manually via `workflow_dispatch`. Manual publishing with `comfy node publish` continues to work unchanged (dev tooling only — no node or code changes).
+
 ## [0.9.6] - 2026-09-11
 
 ### Added
