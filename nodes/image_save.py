@@ -42,7 +42,7 @@ try:
 except ImportError:  # core flag module - always present inside ComfyUI
     args = None
 
-_P = "\033[38;5;141m[HWP Save Image]\033[38;5;41m "
+_P = "\033[38;5;141m[HWP Save Image]\033[38;5;11m "
 _R = "\033[0m"
 
 

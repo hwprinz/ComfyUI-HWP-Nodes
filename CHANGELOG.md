@@ -10,6 +10,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ### Added
 - Release automation: GitHub Actions workflow (`.github/workflows/publish-comfy-registry.yml`) that publishes the pack to the Comfy Registry automatically on every `v*` tag push, using the pushed commit message as the version changelog; can also be triggered manually via `workflow_dispatch`. Manual publishing with `comfy node publish` continues to work unchanged (dev tooling only — no node or code changes).
 
+### Changed
+- **HWP Save Image (Advanced)**: the `-> Saved image to <path>` log lines are yellow by default again (as in LayerStyle's `SaveImage Plus`), which stands out better than the green shipped in 0.9.6.
+
 ## [0.9.6] - 2026-09-11
 
 ### Added
