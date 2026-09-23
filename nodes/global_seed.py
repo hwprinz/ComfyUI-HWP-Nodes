@@ -112,7 +112,9 @@ def prompt_seed_update(json_data):
             break
 
     if not seed_is_global:
-        _log("no GlobalSeed node in workflow, skipping")
+        # deliberately silent: this hook fires for every run of every workflow,
+        # so a "skipping" line would show up for users who don't use the node
+        # _log("no GlobalSeed node in workflow, skipping")
         return None, False
 
     used_seed = value

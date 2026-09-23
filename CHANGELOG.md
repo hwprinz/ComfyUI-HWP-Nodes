@@ -13,6 +13,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ### Changed
 - **HWP Save Image (Advanced)**: the `-> Saved image to <path>` log lines are yellow by default again (as in LayerStyle's `SaveImage Plus`), which stands out better than the green shipped in 0.9.6.
 
+### Fixed
+- **HWP Global Seed**: the `no GlobalSeed node in workflow, skipping` log line is suppressed — the prompt hook runs on every run of every workflow, so the line showed up for users who don't use the node. Detection is unchanged: as soon as a Global Seed node is in the workflow, the node kicks in and logs as before.
+
 ## [0.9.6] - 2026-09-11
 
 ### Added
