@@ -183,6 +183,13 @@ cd ComfyUI/custom_nodes
 git clone https://github.com/hwprinz/ComfyUI-HWP-Nodes
 ```
 
+The blind watermark of HWP Save Image (Advanced) needs two extra Python packages that ComfyUI does not install automatically for clone installs. Run this once from the clone folder:
+
+```
+cd ComfyUI-HWP-Nodes
+python -m pip install -r requirements.txt
+```
+
 Restart ComfyUI.
 
 ## License

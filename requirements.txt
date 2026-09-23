@@ -1,0 +1,4 @@
+# Extra Python dependencies for HWP Save Image (Advanced)'s blind watermark.
+# numpy / torch / Pillow are provided by ComfyUI itself.
+qrcode
+blind-watermark
