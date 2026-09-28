@@ -9,7 +9,7 @@ A small collection of custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI
 
 | Node | File | Purpose |
 |---|---|---|
-| [HWP Global Seed](nodes/global_seed.py) | `global_seed.py` | Broadcasts one seed to every seed/noise widget in the workflow |
+| [HWP Global Seed](nodes/global_seed.py) | `global_seed.py` | Broadcasts one seed **value** to every `seed` / `noise_seed` int widget in the workflow |
 | [HWP Seed Node](nodes/seed_node.py) | `seed_node.py` | Local (non-broadcasting) seed + noise source for a single sampler |
 | [HWP Get Side (Latent)](nodes/get_side_from_latent.py) | `get_side_from_latent.py` | Returns the longest/shortest pixel-space dimension of a `LATENT` |
 | [HWP Get Side (X/Y)](nodes/get_side_from_xy.py) | `get_side_from_xy.py` | Returns the longest/shortest of a `width`/`height` pair |
@@ -29,7 +29,7 @@ All nodes are registered under the `HWP` category. To find them, just type `HWP`
 
 **File:** `nodes/global_seed.py` · **Category:** HWP
 
-Global seed controller for ComfyUI workflows. Distributes a single seed value to every other `seed` / `seed_num` / `noise_seed` widget in the workflow, so you only need to manage one seed control instead of one per sampler.
+Global seed controller for ComfyUI workflows. Distributes a single seed **value** to every other `seed` / `seed_num` / `noise_seed` **int widget** in the workflow, so you only need to manage one seed control instead of one per sampler. This is the seed *value* only — the node's `noise` output is a separate `NOISE` object that you **wire** like any other output; it is **not** broadcast (see Outputs below).
 
 ![Preview](screenshots/global_seed.png)
 <!-- TODO: screenshot of the node + the 🎲 button -->
@@ -50,8 +50,8 @@ The plain `action` variants advance one shared value for every node. The `... fo
 
 | Output | Type | Description |
 |---|---|---|
-| `seed` | INT | The resolved seed value |
-| `noise` | NOISE | The same seed wrapped as a ready-to-use noise object (via ComfyUI's own `Noise_RandomNoise`) — useful for workflows (e.g. Flux.2 / `SamplerCustomAdvanced`) that need a `NOISE` input directly, without a separate `RandomNoise` converter node |
+| `seed` | INT | The resolved seed value. On this (global) node it is also **broadcast** to every `seed` / `seed_num` / `noise_seed` int widget in the workflow — or wired to a single `INT` input like any other output |
+| `noise` | NOISE | The same seed wrapped as a ready-to-use noise object (via ComfyUI's own `Noise_RandomNoise`) — useful for workflows (e.g. Flux.2 / `SamplerCustomAdvanced`) that need a `NOISE` input directly, without a separate `RandomNoise` converter node. **Wired, not broadcast**: connect it to a `NOISE` input — unlike the `seed` value it is never auto-applied, so it must always be connected |
 
 ---
 
@@ -75,8 +75,8 @@ A **local** seed + noise source — the non-global counterpart of HWP Global See
 
 | Output | Type | Description |
 |---|---|---|
-| `seed` | INT | The resolved seed value |
-| `noise` | NOISE | The same seed wrapped as a ready-to-use noise object (via ComfyUI's own `Noise_RandomNoise`) |
+| `seed` | INT | The resolved seed value — applied **only** to the node(s) you wire it to (this node broadcasts nothing) |
+| `noise` | NOISE | The same seed wrapped as a ready-to-use noise object (via ComfyUI's own `Noise_RandomNoise`) — **wired, not broadcast**: connect it to a `NOISE` input, like this node's `seed` |
 
 ---
 
@@ -173,6 +173,7 @@ An advanced terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced
 ## Shared Behaviour
 
 - **Seed/noise pairing**: HWP Global Seed and HWP Seed Node both emit `seed` (INT) and `noise` (NOISE, via ComfyUI's `Noise_RandomNoise`), so either can feed a `SamplerCustomAdvanced`-style graph directly with no extra converter node.
+- **Broadcast vs. wired (the key distinction)**: the *seed value* of **HWP Global Seed** is broadcast to every `seed` / `seed_num` / `noise_seed` **int widget** in the workflow — that is the "global" part. A `noise` output, on **either** node, is a `NOISE` object and is **not** broadcast: it always has to be **wired** to a `NOISE` input such as `SamplerCustomAdvanced`. **HWP Seed Node** is fully local — both its `seed` and its `noise` reach only the node(s) you wire them to.
 - **Manual randomize**: both seed nodes get a client-side 🎲 "Manual Random Seed" button and live `value`/`last_seed` widget updates from the bundled JS extensions (`web/global_seed.js`, `web/seed_node.js`). They coexist in the same workflow without interfering with each other.
 - **Logging**: both seed nodes support `default` (one summary line per run) and `verbose` (adds per-node/per-run seed detail) logging modes.
 

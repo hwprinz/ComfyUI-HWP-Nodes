@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **Documentation (HWP Global Seed / HWP Seed Node)**: made the README explicit about **broadcast vs. wired** — the *seed value* of HWP Global Seed is broadcast to every `seed` / `seed_num` / `noise_seed` int widget, but a `noise` (`NOISE`) output is **not** broadcast and must always be **wired** to a `NOISE` input (e.g. `SamplerCustomAdvanced` in Flux.2 workflows). Documentation only — no code change.
+
 ## [0.9.7] - 2026-09-23
 
 ### Added
