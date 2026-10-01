@@ -18,6 +18,7 @@ from .nodes.seed_node import (
 from .nodes.get_side_from_latent import GetSideFromLatent
 from .nodes.get_side_from_xy import GetSideFromXY
 from .nodes.image_save import HWPImageSave
+from .nodes.aspect_size import HWPAspectSize
 
 # ---------------------------------------------------------------------------
 # Node registration
@@ -28,6 +29,7 @@ NODE_CLASS_MAPPINGS = {
     "GetSideFromLatent": GetSideFromLatent,
     "GetSideFromXY": GetSideFromXY,
     "HWPImageSave": HWPImageSave,
+    "HWPAspectSize": HWPAspectSize,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -36,6 +38,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "GetSideFromLatent": "HWP Get Side (Latent)",
     "GetSideFromXY": "HWP Get Side (X/Y)",
     "HWPImageSave": "HWP Save Image (Advanced)",
+    "HWPAspectSize": "HWP Aspect Size",
 }
 
 WEB_DIRECTORY = "./web"
