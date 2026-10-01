@@ -29,12 +29,14 @@ changes. Pick the downscale factor the model's VAE/patch size requires
 import math
 
 import server
+import torch
+import comfy.model_management
 
 
 class HWPAspectSize:
     CATEGORY = "HWP"
-    RETURN_TYPES = ("INT", "INT")
-    RETURN_NAMES = ("width", "height")
+    RETURN_TYPES = ("INT", "INT", "LATENT")
+    RETURN_NAMES = ("width", "height", "latent")
     FUNCTION = "run"
 
     # model_type -> base (square) pixel budget.
@@ -65,13 +67,14 @@ class HWPAspectSize:
                 "aspect_ratio_width": ("INT", {"default": 1, "min": 1, "step": 1, "display": "number"}),
                 "aspect_ratio_height": ("INT", {"default": 1, "min": 1, "step": 1, "display": "number"}),
                 "downscale_factor": ("INT", {"default": 32, "min": 1, "max": 128, "step": 1, "display": "number"}),
+                "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096, "step": 1, "display": "number"}),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
             },
         }
 
-    def run(self, model_type, aspect_ratio_width, aspect_ratio_height, downscale_factor, unique_id):
+    def run(self, model_type, aspect_ratio_width, aspect_ratio_height, downscale_factor, batch_size, unique_id):
         if model_type not in self.MODEL_PIXELS:
             raise ValueError(f"Unknown model_type: {model_type!r}")
         if aspect_ratio_width < 1 or aspect_ratio_height < 1:
@@ -97,7 +100,15 @@ class HWPAspectSize:
         if prompt_server is not None and hasattr(prompt_server, "send_progress_text"):
             prompt_server.send_progress_text(f"{width}x{height}", unique_id)
 
-        return (width, height)
+        # Also emit a ready-to-use empty LATENT (same math as the built-in
+        # Empty Latent Image) so the node can feed a sampler directly — or
+        # keep using the INT outputs if you prefer your own latent node.
+        latent = torch.zeros(
+            [batch_size, 4, height // 8, width // 8],
+            device=comfy.model_management.get_torch_device(),
+        )
+
+        return (width, height, {"samples": latent})
 
 
 NODE_CLASS_MAPPINGS = {

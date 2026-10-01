@@ -187,6 +187,7 @@ Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/
 | `aspect_ratio_width` | INT | `1` | Aspect ratio, width part (free integer) |
 | `aspect_ratio_height` | INT | `1` | Aspect ratio, height part (free integer) |
 | `downscale_factor` | INT | `32` | Both output dimensions are rounded up to multiples of this (1–128) |
+| `batch_size` | INT | `1` | Batch size of the `latent` output (1–4096) |
 
 ### Outputs
 
@@ -194,6 +195,7 @@ Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/
 |---|---|---|
 | `width` | INT | Pixel width, multiple of `downscale_factor` |
 | `height` | INT | Pixel height, multiple of `downscale_factor` |
+| `latent` | LATENT | An empty latent at the resolved size (same math as the built-in `Empty Latent Image`) — wire this straight into your sampler and skip that node; the INT outputs above keep working for everything else |
 
 ### Presets
 
