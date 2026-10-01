@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.8] - 2026-09-30
 
 ### Added
 - **HWP Aspect Size** — new node that computes `width`/`height` from a model's base pixel budget and a free-form aspect ratio (two integers, e.g. 5×2 for a Discord banner), rounding both dimensions up to multiples of a `downscale_factor` (VAE-safe output; the resolved size is shown below the node after a run). Modelled on Drift's Aspect Size V2 (DJZ-Nodes) with the preset list renamed/extended and sorted by ascending pixel budget: `SD 1.5` (512²), `SD 2.1` (768²), `SDXL, FLUX` (1024² — also Krea 2), `QWEN` (1328² — Qwen-Image/2512, matches the official README table), `1440x`, `WAN22` (1536²), `Qwen2.1, Ideogram` (2048² — Ideogram 4 / 4.5, Qwen-Image 2.x, Ming-Image 0.1 and Kandinsky Cascade, all native 2K), plus the generic 4K/3072x/8K/16K budgets. Preset names use ", " instead of "/" because the combo widget renders "/" as a submenu separator.
