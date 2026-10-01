@@ -197,23 +197,36 @@ Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/
 
 ### Presets
 
-Several models share a pixel budget, so one preset can name several of them — that is deliberate (no double entries for the same budget). The menu is sorted by ascending base budget:
+The `model_type` preset sets the **total pixel budget** (width × height). The aspect ratio you choose decides how that area is split into width and height. Several models share a pixel budget, so one preset can name several of them — that is deliberate (no double entries for the same budget). The menu is sorted by ascending base budget.
 
+MP uses ComfyUI's convention: 1 MP = 1024 × 1024 = 1,048,576 pixels.
 
-| Preset | Base budget | For |
-|---|---|---|
-| `SD 1.5` | 512×512 (0.26 MP) | Stable Diffusion 1.5 |
-| `SDXL/FLUX` | 1024×1024 (1 MP) | SDXL, FLUX.1, SD3, Kolors, HunyuanImage 3.0, Krea 2 (its [model card](https://huggingface.co/krea/Krea-2-Raw) examples run at 1024×1024), … |
-| `QWEN` | 1328×1328 (1.76 MP) | Qwen-Image / Qwen-Image-2512 — the budget of the official [README](https://github.com/QwenLM/Qwen-Image) resolution table (1:1 → 1328×1328; non-square ratios keep the full budget, so they land a touch above the table's per-ratio values) |
-| `1440x` | 1440×1440 (2.07 MP) | generic |
-| `WAN22` | 1536×1536 (2.36 MP) | Wan 2.2 |
-| `Qwen2.1/Ming` | 2048×2048 (4.19 MP) | Qwen-Image 2.x (native 2K), [Ming-Image 0.1](https://huggingface.co/inclusionAI/Ming-Image-0.1-Design) (2048×2048 recommended), Kandinsky Cascade, [Ideogram 4](https://huggingface.co/ideogram-ai/ideogram-4-fp8) (native 2K, 256–2048 per side) |
-| `4K` | 2880×2880 (8.29 MP) | generic |
-| `3072x` | 3072×3072 (9.44 MP) | generic |
-| `8K` | 5760×5760 (33.18 MP) | generic |
-| `16K` | 11520×11520 (132.7 MP) | generic |
+| Preset | Square equivalent | Pixels | MP |
+|---|---|---|---|
+| `SD 1.5` | 512 × 512 | 262,144 | 0.25 |
+| `SD 2.1` | 768 × 768 | 589,824 | 0.56 |
+| `SDXL, FLUX` | 1024 × 1024 | 1,048,576 | 1.0 |
+| `QWEN` | 1328 × 1328 | 1,763,584 | 1.68 |
+| `1440x` | 1440 × 1440 | 2,073,600 | 1.98 |
+| `WAN22` | 1536 × 1536 | 2,359,296 | 2.25 |
+| `Qwen2.1, Ming` | 2048 × 2048 | 4,194,304 | 4.0 |
+| `4K` | 2880 × 2880 | 8,294,400 | 7.91 |
+| `3072x` | 3072 × 3072 | 9,437,184 | 9.0 |
+| `8K` | 5760 × 5760 | 33,177,600 | 31.64 |
+| `16K` | 11520 × 11520 | 132,710,400 | 126.56 |
 
-**Ideogram 4 note:** its 2048 limit is *per side*, and wide ratios are capped at 6:1 — for very wide shapes the full 4.19 MP budget cannot be kept (e.g. 5:2 → 3264×1312 exceeds the 2048 side limit; drop the factor/budget or accept a smaller output for that model).
+"4K" and "8K" match the pixel area of 3840 × 2160 and 7680 × 4320 respectively, not a literal square of that width.
+
+Which model fits which preset:
+
+- `SD 1.5` — Stable Diffusion 1.5 · `SD 2.1` — Stable Diffusion 2.x (768)
+- `SDXL, FLUX` — SDXL, FLUX.1, SD3, Kolors, HunyuanImage 3.0, [Krea 2](https://huggingface.co/krea/Krea-2-Raw) (its model card examples run at 1024×1024), …
+- `QWEN` — Qwen-Image / Qwen-Image-2512 — the budget of the official [README](https://github.com/QwenLM/Qwen-Image) resolution table (1:1 → 1328×1328; non-square ratios keep the full budget, so they land a touch above the table's per-ratio values)
+- `WAN22` — Wan 2.2
+- `Qwen2.1, Ming` — Qwen-Image 2.x (native 2K), [Ming-Image 0.1](https://huggingface.co/inclusionAI/Ming-Image-0.1-Design) (2048×2048 recommended), Kandinsky Cascade, [Ideogram 4](https://huggingface.co/ideogram-ai/ideogram-4-fp8) (native 2K, 256–2048 per side)
+- `1440x`, `4K`, `3072x`, `8K`, `16K` — generic budgets
+
+**Ideogram 4 note:** its 2048 limit is *per side*, and wide ratios are capped at 6:1 — for very wide shapes the full 4.0 MP budget cannot be kept (e.g. 5:2 → 3264×1312 exceeds the 2048 side limit; drop the factor/budget or accept a smaller output for that model).
 
 ### Downscale factor
 
@@ -221,13 +234,13 @@ Pick the smallest multiple the model actually requires — a larger factor narro
 
 | Model | Factor |
 |---|---|
-| SD 1.5, SDXL | 8 (16 works too) |
+| SD 1.5, SD 2.1, SDXL | 8 (16 works too) |
 | FLUX.1, SD3 | 16 |
 | Qwen-Image / 2512 | 16 (every dimension in the official table is a multiple of 16) |
 | Qwen-Image 2.x, GLM-Image | 32 |
 | Ming-Image 0.1, Ideogram 4 | 16 (Ming's 1024/2048 buckets are multiples of 32, so 32 works for it too) |
 
-Example: `Qwen2.1/Ming`, ratio `5` × `2`, factor `32` → **3264 × 1312** (≈ 4.2 MP at 5:2).
+Example: `Qwen2.1, Ming`, ratio `5` × `2`, factor `32` → **3264 × 1312** (4.0 MP at 5:2).
 
 ---
 
