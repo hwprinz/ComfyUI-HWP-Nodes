@@ -15,7 +15,7 @@ Preset names must not contain "/" — the combo widget renders it as a submenu.
 - QWEN           1328x1328 (1.68 MP) Qwen-Image / Qwen-Image-2512 (official README table)
 - 1440x          1440x1440 (1.98 MP)
 - WAN22          1536x1536 (2.25 MP)
-- Qwen2.1, Ming  2048x2048 (4.0 MP)  Qwen-Image 2.x (native 2K), Ming-Image 0.1, Kandinsky Cascade, Ideogram 4
+- Qwen2.1, Ideogram  2048x2048 (4.0 MP)  Qwen-Image 2.x (native 2K), Ideogram 4 / 4.5, Ming-Image 0.1, Kandinsky Cascade
 - 4K             2880x2880 (7.91 MP)
 - 3072x          3072x3072 (9.0 MP)
 - 8K             5760x5760 (31.64 MP)
@@ -41,8 +41,8 @@ class HWPAspectSize:
 
     # model_type -> base (square) pixel budget.
     # Names must not contain "/" (combo renders it as a submenu); use ", " instead.
-    # Several entries share a budget (e.g. "Qwen2.1, Ming" covers Qwen-Image 2.x,
-    # Ming-Image 0.1, Kandinsky Cascade and Ideogram 4 — all native 2K/2048x2048);
+    # Several entries share a budget (e.g. "Qwen2.1, Ideogram" covers Qwen-Image 2.x,
+    # Ideogram 4 / 4.5, Ming-Image 0.1 and Kandinsky Cascade — all native 2K/2048x2048);
     # the README documents which model lives under which preset.
     # ordered by ascending base budget
     MODEL_PIXELS = {
@@ -52,7 +52,7 @@ class HWPAspectSize:
         "QWEN": 1328 * 1328,
         "1440x": 1440 * 1440,
         "WAN22": 1536 * 1536,
-        "Qwen2.1, Ming": 2048 * 2048,
+        "Qwen2.1, Ideogram": 2048 * 2048,
         "4K": 2880 * 2880,
         "3072x": 3072 * 3072,
         "8K": 5760 * 5760,
