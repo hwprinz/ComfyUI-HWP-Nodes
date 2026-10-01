@@ -100,15 +100,20 @@ class HWPAspectSize:
         if prompt_server is not None and hasattr(prompt_server, "send_progress_text"):
             prompt_server.send_progress_text(f"{width}x{height}", unique_id)
 
-        # Also emit a ready-to-use empty LATENT (same math as the built-in
-        # Empty Latent Image) so the node can feed a sampler directly — or
-        # keep using the INT outputs if you prefer your own latent node.
+        # Also emit a ready-to-use empty LATENT, matching the built-in Empty
+        # Latent Image byte-for-byte — including "downscale_ratio_spacial": 8.
+        # KSampler reads that tag (comfy.sample.fix_empty_latent_channels) to
+        # rescale the canonical /8 latent to a model whose VAE uses another
+        # factor (e.g. 16 for Qwen-Image / FLUX). Without it, such models
+        # decode at 2x the intended size. Or keep using the INT outputs if you
+        # prefer your own latent node.
         latent = torch.zeros(
             [batch_size, 4, height // 8, width // 8],
-            device=comfy.model_management.get_torch_device(),
+            device=comfy.model_management.intermediate_device(),
+            dtype=comfy.model_management.intermediate_dtype(),
         )
 
-        return (width, height, {"samples": latent})
+        return (width, height, {"samples": latent, "downscale_ratio_spacial": 8})
 
 
 NODE_CLASS_MAPPINGS = {
