@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.9.9] - 2026-10-04
+
+### Added
+- **HWP Aspect Size**: hover tooltips on all widgets and the `model` input (shown on mouse-over, like the built-in node tooltips), explaining the pixel-budget logic, the downscale-factor choice per model family, and when the model input is needed.
+- **HWP Aspect Size**: new optional `model` (MODEL) input. When connected (to the same MODEL chain that feeds your sampler), the `latent` output is emitted in that model's **native layout** — channel count and spatial downscale ratio are read from the model itself via the same conversion the built-in `KSampler` applies (`comfy.sample.fix_empty_latent_channels`), and the `downscale_ratio_spacial` tag is dropped so nothing rescales a second time. This makes the latent work with **custom samplers** (e.g. RES4LYF `ClownsharKSampler`) that do not rescale empty latents themselves — on 1/16-VAE models (Flux 2: 128 ch, Qwen-Image 2.x: 64 ch) a canonical /8 latent would otherwise decode at 2× the intended size. Unconnected, the output is byte-for-byte the built-in `Empty Latent Image` layout as before, so existing workflows are unchanged. Verified against the Flux 2 / Qwen-Image 2.1 / SD3 / SDXL latent formats.
+
 ## [0.9.8] - 2026-09-30
 
 ### Added

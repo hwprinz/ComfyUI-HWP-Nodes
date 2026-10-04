@@ -24,6 +24,15 @@ Preset names must not contain "/" — the combo widget renders it as a submenu.
 The pixel budget of the selected model stays constant; only the shape
 changes. Pick the downscale factor the model's VAE/patch size requires
 (e.g. 16 for FLUX.1 / Qwen-Image 1.x, 32 for Qwen-Image 2.x / GLM-Image).
+
+The optional `model` input (connect the same MODEL chain that feeds your
+sampler) switches the latent output to that model's native layout — the
+same conversion the built-in KSampler applies (channel count and spatial
+downscale are read from the model itself). Custom samplers (e.g. RES4LYF
+ClownsharKSampler) do not do that conversion, so on 1/16-VAE models such
+as Flux 2 or Qwen-Image 2.x a canonical /8 latent would decode at 2x the
+intended size. Unconnected, the latent matches the built-in Empty Latent
+Image exactly, which is what the built-in samplers expect.
 """
 
 import math
@@ -31,6 +40,7 @@ import math
 import server
 import torch
 import comfy.model_management
+import comfy.sample
 
 
 class HWPAspectSize:
@@ -63,18 +73,36 @@ class HWPAspectSize:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model_type": (list(cls.MODEL_PIXELS),),
-                "aspect_ratio_width": ("INT", {"default": 1, "min": 1, "step": 1, "display": "number"}),
-                "aspect_ratio_height": ("INT", {"default": 1, "min": 1, "step": 1, "display": "number"}),
-                "downscale_factor": ("INT", {"default": 32, "min": 1, "max": 128, "step": 1, "display": "number"}),
-                "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096, "step": 1, "display": "number"}),
+                "model_type": (list(cls.MODEL_PIXELS), {
+                    "tooltip": "Base pixel budget (width × height at 1:1) — the aspect ratio only changes the shape, the total stays constant.",
+                }),
+                "aspect_ratio_width": ("INT", {"default": 1, "min": 1, "step": 1, "display": "number",
+                    "tooltip": "Aspect ratio, width part (free integer, e.g. 5 for 5:2)."}),
+                "aspect_ratio_height": ("INT", {"default": 1, "min": 1, "step": 1, "display": "number",
+                    "tooltip": "Aspect ratio, height part (free integer, e.g. 2 for 5:2)."}),
+                "downscale_factor": ("INT", {"default": 32, "min": 1, "max": 128, "step": 1, "display": "number",
+                    "tooltip": "Both dimensions are rounded UP to multiples of this — pick what the model's VAE/patch size requires (8: SD 1.5 / 2.1 / SDXL, 16: FLUX.1 / SD3 / Qwen-Image 1.x, 32: Qwen-Image 2.x)."}),
+                "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096, "step": 1, "display": "number",
+                    "tooltip": "Batch size of the latent output (1–4096)."}),
+            },
+            "optional": {
+                # The model the latent will be sampled with (same MODEL chain
+                # that feeds the sampler, e.g. the LoRA/loader output). When
+                # connected, the latent output is built in that model's
+                # native layout. Needed for custom samplers (RES4LYF
+                # ClownsharKSampler, ...) that do not rescale empty latents
+                # the way the built-in KSampler does. Unconnected: the latent
+                # matches the built-in Empty Latent Image exactly.
+                "model": ("MODEL", {
+                    "tooltip": "Optional — the model the latent will be sampled with (same MODEL chain as your sampler). Connect it to get the latent in that model's native layout; needed for custom samplers (e.g. RES4LYF ClownsharKSampler) that do not rescale empty latents themselves.",
+                }),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
             },
         }
 
-    def run(self, model_type, aspect_ratio_width, aspect_ratio_height, downscale_factor, batch_size, unique_id):
+    def run(self, model_type, aspect_ratio_width, aspect_ratio_height, downscale_factor, batch_size, unique_id, model=None):
         if model_type not in self.MODEL_PIXELS:
             raise ValueError(f"Unknown model_type: {model_type!r}")
         if aspect_ratio_width < 1 or aspect_ratio_height < 1:
@@ -100,20 +128,42 @@ class HWPAspectSize:
         if prompt_server is not None and hasattr(prompt_server, "send_progress_text"):
             prompt_server.send_progress_text(f"{width}x{height}", unique_id)
 
-        # Also emit a ready-to-use empty LATENT, matching the built-in Empty
-        # Latent Image byte-for-byte — including "downscale_ratio_spacial": 8.
-        # KSampler reads that tag (comfy.sample.fix_empty_latent_channels) to
-        # rescale the canonical /8 latent to a model whose VAE uses another
-        # factor (e.g. 16 for Qwen-Image / FLUX). Without it, such models
-        # decode at 2x the intended size. Or keep using the INT outputs if you
-        # prefer your own latent node.
+        # Also emit a ready-to-use empty LATENT at the resolved size.
         latent = torch.zeros(
             [batch_size, 4, height // 8, width // 8],
             device=comfy.model_management.intermediate_device(),
             dtype=comfy.model_management.intermediate_dtype(),
         )
 
-        return (width, height, {"samples": latent, "downscale_ratio_spacial": 8})
+        if model is None:
+            # Match the built-in Empty Latent Image byte-for-byte, including
+            # "downscale_ratio_spacial": 8. The built-in KSampler /
+            # SamplerCustomAdvanced read that tag (comfy.sample.
+            # fix_empty_latent_channels) and rescale the canonical /8 latent
+            # to the model's native layout, so this works for every model —
+            # as long as the sampler does that conversion itself.
+            return (width, height, {"samples": latent, "downscale_ratio_spacial": 8})
+
+        # Model connected: build the model's native layout directly, using
+        # the exact conversion the built-in KSampler applies (channel count
+        # and spatial ratio are read from the model itself: SD3 / FLUX.1 =
+        # 16 ch / 8, Qwen-Image 2.x = 64 ch / 16, Flux 2 = 128 ch / 16, ...).
+        # The "downscale_ratio_spacial" tag is dropped: the latent is already
+        # native, and a sampler honouring the tag would rescale it a second
+        # time.
+        fix = getattr(comfy.sample, "fix_empty_latent_channels", None)
+        if fix is None:
+            print("[HWP Aspect Size] this ComfyUI is too old to convert the latent to the model layout - emitting the canonical /8 latent instead")
+            return (width, height, {"samples": latent, "downscale_ratio_spacial": 8})
+        try:
+            try:
+                native = fix(model, latent, 8)
+            except TypeError:
+                native = fix(model, latent)  # older ComfyUI without the ratio argument
+        except Exception as e:
+            print(f"[HWP Aspect Size] could not convert the latent to the model layout ({e}) - emitting the canonical /8 latent instead")
+            return (width, height, {"samples": latent, "downscale_ratio_spacial": 8})
+        return (width, height, {"samples": native})
 
 
 NODE_CLASS_MAPPINGS = {

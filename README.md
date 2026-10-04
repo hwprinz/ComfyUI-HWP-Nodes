@@ -188,6 +188,7 @@ Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/
 | `aspect_ratio_height` | INT | `1` | Aspect ratio, height part (free integer) |
 | `downscale_factor` | INT | `32` | Both output dimensions are rounded up to multiples of this (1–128) |
 | `batch_size` | INT | `1` | Batch size of the `latent` output (1–4096) |
+| `model` | MODEL | *Optional.* The model the latent will be sampled with (the same MODEL chain that feeds your sampler). See [Native latent output](#native-latent-output-model-input) |
 
 ### Outputs
 
@@ -195,7 +196,7 @@ Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/
 |---|---|---|
 | `width` | INT | Pixel width, multiple of `downscale_factor` |
 | `height` | INT | Pixel height, multiple of `downscale_factor` |
-| `latent` | LATENT | An empty latent at the resolved size (same math as the built-in `Empty Latent Image`) — wire this straight into your sampler and skip that node; the INT outputs above keep working for everything else |
+| `latent` | LATENT | An empty latent at the resolved size — wire this straight into your sampler and skip your own empty-latent node; the INT outputs above keep working for everything else. Native layout when a model is connected, built-in `Empty Latent Image` layout otherwise |
 
 ### Presets
 
@@ -243,6 +244,24 @@ Pick the smallest multiple the model actually requires — a larger factor narro
 | Ming-Image 0.1, Ideogram 4 | 16 (Ming's 1024/2048 buckets are multiples of 32, so 32 works for it too) |
 
 Example: `Qwen2.1, Ideogram`, ratio `5` × `2`, factor `32` → **3264 × 1312** (4.0 MP at 5:2).
+
+### Native latent output (model input)
+
+An empty latent has to match the model's native layout — channel count and spatial compression (both are read from the model itself when a model is connected; reference values):
+
+| Model family | Native latent |
+|---|---|
+| SD 1.5, SD 2.1, SDXL | 4 ch, 1/8 |
+| SD3, FLUX.1, Qwen-Image / 2512 (1.x) | 16 ch, 1/8 |
+| Qwen-Image 2.x | 64 ch, 1/16 |
+| Flux 2 | 128 ch, 1/16 |
+
+What the `latent` output contains depends on whether a model is connected:
+
+- **No model connected** — the output matches the built-in `Empty Latent Image` exactly (4 ch, 1/8, plus the `downscale_ratio_spacial` tag). The built-in `KSampler` / `SamplerCustomAdvanced` read that tag and rescale the latent to the model's native layout themselves, so this works for every model *with the built-in samplers*.
+- **Model connected** — the node applies the same conversion the built-in `KSampler` uses (the channel count and spatial ratio are read from the model, so no per-model table is involved) and emits the latent already in the model's native layout, without the tag. Works with any sampler, and with the built-in samplers as well (the tag is gone, so nothing rescales a second time).
+
+**When you need the model input:** custom samplers that do not rescale empty latents — e.g. RES4LYF `ClownsharKSampler`. Without the model connected, such a sampler takes the 1/8 latent as-is, and on a 1/16-VAE model (Flux 2, Qwen-Image 2.x) that decodes at **2× the intended size** (a 1024 request comes out 2048), at 4× the VRAM. Connect the same MODEL chain that feeds the sampler (e.g. the LoRA / loader output) and the size comes out exactly as resolved.
 
 ---
 
