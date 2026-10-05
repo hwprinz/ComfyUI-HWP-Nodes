@@ -14,7 +14,7 @@ A small collection of custom [ComfyUI](https://github.com/comfyanonymous/ComfyUI
 | [HWP Get Side (Latent)](nodes/get_side_from_latent.py) | `get_side_from_latent.py` | Returns the longest/shortest pixel-space dimension of a `LATENT` |
 | [HWP Get Side (X/Y)](nodes/get_side_from_xy.py) | `get_side_from_xy.py` | Returns the longest/shortest of a `width`/`height` pair |
 | [HWP Save Image (Advanced)](nodes/image_save.py) | `image_save.py` | Multi-format save (PNG/JPG/WEBP/TIFF/ICO) with timestamps, metadata, blind watermark and per-file logging |
-| [HWP Aspect Size](nodes/aspect_size.py) | `aspect_size.py` | `width`/`height` from a model's pixel budget + free aspect ratio (e.g. 5:2), rounded to a VAE-safe multiple |
+| [HWP Aspect Size](nodes/aspect_size.py) | `aspect_size.py` | `width`/`height` from a model's pixel budget + free aspect ratio (e.g. 5:2), capped at the model family's max side, rounded to a VAE-safe multiple |
 
 ---
 
@@ -175,7 +175,7 @@ An advanced terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced
 
 **File:** `nodes/aspect_size.py` · **Category:** HWP
 
-Computes a `width` × `height` pair for a text-to-image model. Pick the model preset (its base pixel budget stays constant), enter a free-form aspect ratio as two integers — e.g. `5` × `2` for a Discord banner — and the node returns both dimensions rounded **up** to multiples of a `downscale_factor`, so the result is always VAE-safe. The resolved size is also shown below the node after a run.
+Computes a `width` × `height` pair for a text-to-image model. Pick the model preset (its base pixel budget stays constant), enter a free-form aspect ratio as two integers — e.g. `5` × `2` for a Discord banner — and the node returns both dimensions rounded **up** to multiples of a `downscale_factor`, so the result is always VAE-safe. The preset additionally bakes in the model family's **max side**: extreme ratios get scaled down so the long side never exceeds it (mild ratios are unaffected). The resolved size is also shown below the node after a run, with a `(capped)` suffix when the max side engaged.
 
 Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/blob/main/AspectSizeV2.py) (DJZ-Nodes), with the preset list renamed/extended so entries name the models they actually fit.
 
@@ -183,7 +183,7 @@ Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/
 
 | Input | Type | Default | Description |
 |---|---|---|---|
-| `model_type` | ENUM | `SD 1.5` | The base pixel budget (see presets below) |
+| `model_type` | ENUM | `SD 1.5` | The model family's pixel budget **and** max side (see presets below) |
 | `aspect_ratio_width` | INT | `1` | Aspect ratio, width part (free integer) |
 | `aspect_ratio_height` | INT | `1` | Aspect ratio, height part (free integer) |
 | `downscale_factor` | INT | `32` | Both output dimensions are rounded up to multiples of this (1–128) |
@@ -200,36 +200,47 @@ Modelled on Drift's [Aspect Size V2](https://github.com/MushroomFleet/DJZ-Nodes/
 
 ### Presets
 
-The `model_type` preset sets the **total pixel budget** (width × height). The aspect ratio you choose decides how that area is split into width and height. Several models share a pixel budget, so one preset can name several of them — that is deliberate (no double entries for the same budget). The menu is sorted by ascending base budget.
+A preset carries two numbers: the model family's **total pixel budget** (width × height) and a **max side** in pixels (— = uncapped). The aspect ratio decides how the budget is split into width and height; at extreme ratios the constant budget makes the long side grow past what the model family handles — and the content starts repeating — so the long side is scaled down to the max side first, and both dimensions are then rounded up to the `downscale_factor`. Mild ratios never reach the cap. The menu is sorted by ascending base budget.
 
 MP uses ComfyUI's convention: 1 MP = 1024 × 1024 = 1,048,576 pixels.
 
-| Preset | Square equivalent | Pixels | MP |
-|---|---|---|---|
-| `SD 1.5` | 512 × 512 | 262,144 | 0.25 |
-| `SD 2.1` | 768 × 768 | 589,824 | 0.56 |
-| `SDXL, FLUX` | 1024 × 1024 | 1,048,576 | 1.0 |
-| `QWEN` | 1328 × 1328 | 1,763,584 | 1.68 |
-| `1440x` | 1440 × 1440 | 2,073,600 | 1.98 |
-| `WAN22` | 1536 × 1536 | 2,359,296 | 2.25 |
-| `Qwen2.1, Ideogram` | 2048 × 2048 | 4,194,304 | 4.0 |
-| `4K` | 2880 × 2880 | 8,294,400 | 7.91 |
-| `3072x` | 3072 × 3072 | 9,437,184 | 9.0 |
-| `8K` | 5760 × 5760 | 33,177,600 | 31.64 |
-| `16K` | 11520 × 11520 | 132,710,400 | 126.56 |
+| Preset | Square equivalent | Pixels | MP | Max side |
+|---|---|---|---|---|
+| `SD 1.5` | 512 × 512 | 262,144 | 0.25 | 1024 |
+| `SD 2.1` | 768 × 768 | 589,824 | 0.56 | 1152 |
+| `SDXL` | 1024 × 1024 | 1,048,576 | 1.0 | 1536 |
+| `FLUX.1` | 1024 × 1024 | 1,048,576 | 1.0 | — |
+| `SDXL, FLUX` | 1024 × 1024 | 1,048,576 | 1.0 | 1536 |
+| `QWEN` | 1328 × 1328 | 1,763,584 | 1.68 | 2048 |
+| `1440x` | 1440 × 1440 | 2,073,600 | 1.98 | — |
+| `WAN22` | 1536 × 1536 | 2,359,296 | 2.25 | 1440 |
+| `Qwen2.1` | 2048 × 2048 | 4,194,304 | 4.0 | 2752 |
+| `Ideogram` | 2048 × 2048 | 4,194,304 | 4.0 | 2048 |
+| `Qwen2.1, Ideogram` | 2048 × 2048 | 4,194,304 | 4.0 | 2048 |
+| `4K` | 2880 × 2880 | 8,294,400 | 7.91 | — |
+| `3072x` | 3072 × 3072 | 9,437,184 | 9.0 | — |
+| `8K` | 5760 × 5760 | 33,177,600 | 31.64 | — |
+| `16K` | 11520 × 11520 | 132,710,400 | 126.56 | — |
 
 "4K" and "8K" match the pixel area of 3840 × 2160 and 7680 × 4320 respectively, not a literal square of that width.
 
 Which model fits which preset:
 
-- `SD 1.5` — Stable Diffusion 1.5 · `SD 2.1` — Stable Diffusion 2.x (768)
-- `SDXL, FLUX` — SDXL, FLUX.1, SD3, Kolors, HunyuanImage 3.0, [Krea 2](https://huggingface.co/krea/Krea-2-Raw) (its model card examples run at 1024×1024), …
-- `QWEN` — Qwen-Image / Qwen-Image-2512 — the budget of the official [README](https://github.com/QwenLM/Qwen-Image) resolution table (1:1 → 1328×1328; non-square ratios keep the full budget, so they land a touch above the table's per-ratio values)
-- `WAN22` — Wan 2.2
-- `Qwen2.1, Ideogram` — [Ideogram 4](https://huggingface.co/ideogram-ai/ideogram-4-fp8) / [Ideogram 4.5](https://huggingface.co/ideogram-ai/ideogram-4.5) (native 2K, 256–2048 per side), Qwen-Image 2.x (native 2K), [Ming-Image 0.1](https://huggingface.co/inclusionAI/Ming-Image-0.1-Design) (2048×2048 recommended), Kandinsky Cascade
-- `1440x`, `4K`, `3072x`, `8K`, `16K` — generic budgets
+- `SD 1.5` — Stable Diffusion 1.5 — capped at 2× native 512, where duplication starts
+- `SD 2.1` — Stable Diffusion 2.x (768) — capped at 1.5× native, keeps 768×1152
+- `SDXL` — SDXL, SD3, Kolors, HunyuanImage 3.0, [Krea 2](https://huggingface.co/krea/Krea-2-Raw) (its model card examples run at 1024×1024), … — capped at the documented optimal bucket (1536×640 at 2.4:1)
+- `FLUX.1` — FLUX.1 (dev / schnell / pro) — no documented side limit, uncapped
+- `SDXL, FLUX` — the pre-split name of the two entries above, kept so existing workflows keep working (conservative 1536 cap applies)
+- `QWEN` — Qwen-Image / Qwen-Image-2512 — budget of the official [README](https://github.com/QwenLM/Qwen-Image) resolution table (1:1 → 1328×1328; non-square ratios keep the full budget, so they land a touch above the table's per-ratio values); cap as below
+- `WAN22` — Wan 2.2 — hosted text-to-image runs 512–1440 per side
+- `Qwen2.1` — Qwen-Image 2.x (native 2K), [Ming-Image 0.1](https://huggingface.co/inclusionAI/Ming-Image-0.1-Design) (2048×2048 recommended), Kandinsky Cascade — capped at the model card's widescreen 2752×1536
+- `Ideogram` — [Ideogram 4](https://huggingface.co/ideogram-ai/ideogram-4-fp8) / [Ideogram 4.5](https://huggingface.co/ideogram-ai/ideogram-4.5) (native 2K) — 256–2048 per side, ratios up to 6:1
+- `Qwen2.1, Ideogram` — the pre-split name of the two entries above, kept so existing workflows keep working (conservative 2048 cap applies)
+- `1440x`, `4K`, `3072x`, `8K`, `16K` — generic budgets, uncapped — the escape hatch for models past their family cap (e.g. a wide banner on FLUX.1 at full budget)
 
-**Ideogram 4 / 4.5 note:** their 2048 limit is *per side*, and wide ratios are capped at 6:1 — for very wide shapes the full 4.0 MP budget cannot be kept (e.g. 5:2 → 3264×1312 exceeds the 2048 side limit; drop the factor/budget or accept a smaller output for those models).
+**QWEN — official specs vs. the cap:** the official Qwen-Image specs are a native 1328×1328 with the published size list topping out at **1664** (16:9 = 1664×928). The preset budget (1328²) follows that official table, but the 2048 max side is *measured, not documented* — and the result depends on the prompt: at **5:1**, **2400×480** was clean with a 3-field concatenated prompt but **duplicated the content with a single prompt field**, while **2048** was clean in both cases (2656 = 2× native 1328 duplicates in both). The cap is therefore 2048 — the widest width verified clean regardless of prompt structure — applied as the long-side cap at **all** ratios: the cap only engages once the budget math would push the long side past 2048 (ratios above ~2.4:1 — below that, the 1328² budget already keeps both sides under it). So e.g. `4` × `1` (uncapped: 2656×664) comes out 2048 × 512, and `6` × `1` comes out 2048 × 352. The cap is a single number per preset in `MODEL_SPECS` and can be raised if a later test verifies a bigger width clean.
+
+**How the cap engages:** `QWEN`, ratio `5` × `1`, factor `16` → the budget math gives 2976×608, which the cap scales to **2048 × 416** (the node shows `2048x416 (capped)` below it). `FLUX.1`, ratio `5` × `2`, factor `16` → **1632 × 656** — full 1.0 MP at 5:2, no documented limit so uncapped.
 
 ### Downscale factor
 
@@ -243,7 +254,7 @@ Pick the smallest multiple the model actually requires — a larger factor narro
 | Qwen-Image 2.x, GLM-Image | 32 |
 | Ming-Image 0.1, Ideogram 4 | 16 (Ming's 1024/2048 buckets are multiples of 32, so 32 works for it too) |
 
-Example: `Qwen2.1, Ideogram`, ratio `5` × `2`, factor `32` → **3264 × 1312** (4.0 MP at 5:2).
+Example: `SDXL`, ratio `24` × `10`, factor `8` → **1536 × 640** (the documented SDXL bucket, via the cap). `QWEN`, ratio `5` × `1`, factor `16` → **2048 × 416** (capped, as above). `FLUX.1`, ratio `5` × `2`, factor `16` → **1632 × 656** (full budget, uncapped).
 
 ### Native latent output (model input)
 

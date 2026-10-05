@@ -1,28 +1,43 @@
 """
 ComfyUI Custom Node - Aspect Size
 Computes Width and Height from a model's base pixel budget and a free-form
-aspect ratio (two integers), rounding both dimensions UP to multiples of a
-downscale factor.
+aspect ratio (two integers), then caps the long side at the model family's
+maximum and rounds both dimensions UP to multiples of a downscale factor.
 
 Modelled on Drift's "Aspect Size V2" (DJZ-Nodes), with the preset list
 renamed/extended so the entries name the models they actually fit:
 
 Preset names must not contain "/" — the combo widget renders it as a submenu.
 
-- SD 1.5         512x512   (0.25 MP)
-- SD 2.1         768x768   (0.56 MP)
-- SDXL, FLUX     1024x1024 (1.0 MP)  SDXL, FLUX.1, SD3, Kolors, HunyuanImage 3.0, Krea 2, ...
-- QWEN           1328x1328 (1.68 MP) Qwen-Image / Qwen-Image-2512 (official README table)
-- 1440x          1440x1440 (1.98 MP)
-- WAN22          1536x1536 (2.25 MP)
-- Qwen2.1, Ideogram  2048x2048 (4.0 MP)  Qwen-Image 2.x (native 2K), Ideogram 4 / 4.5, Ming-Image 0.1, Kandinsky Cascade
-- 4K             2880x2880 (7.91 MP)
-- 3072x          3072x3072 (9.0 MP)
-- 8K             5760x5760 (31.64 MP)
-- 16K            11520x11520 (126.56 MP)
-
 The pixel budget of the selected model stays constant; only the shape
-changes. Pick the downscale factor the model's VAE/patch size requires
+changes. Every model preset additionally carries a max side in pixels
+(0 = uncapped, the generic budgets): at extreme ratios the constant-budget
+width grows without bound and models start repeating the content, so the
+long side is scaled down to the cap before rounding. Caps:
+
+- SD 1.5         512x512   (0.25 MP)   cap 1024  - 2x native, where duplication starts
+- SD 2.1         768x768   (0.56 MP)   cap 1152  - 1.5x native, keeps 768x1152
+- SDXL           1024x1024 (1.0 MP)    cap 1536  - documented optimal buckets (1536x640, 2.4:1)
+- FLUX.1         1024x1024 (1.0 MP)    cap off   - no documented limit
+- SDXL, FLUX     1024x1024 (1.0 MP)    cap 1536  - pre-split alias (existing workflows)
+- QWEN           1328x1328 (1.68 MP)   cap 2048  - Qwen-Image/2512. Official specs: native 1328, published size
+                                                  list tops at 1664 (16:9 = 1664x928). The cap is measured, not
+                                                  documented, and depends on the prompt (at 5:1: 2400 clean with a
+                                                  3-field concatenated prompt but duplicated with a single prompt
+                                                  field; 2048 clean in both, 2656 = 2x native 1328 always
+                                                  duplicates); it is the widest verified-clean width, applied as
+                                                  the long-side cap at ALL ratios
+- 1440x          1440x1440 (1.98 MP)   cap off
+- WAN22          1536x1536 (2.25 MP)   cap 1440  - hosted T2I limit 512-1440 per side
+- Qwen2.1        2048x2048 (4.0 MP)    cap 2752  - model card: 2752x1536 widescreen
+- Ideogram       2048x2048 (4.0 MP)    cap 2048  - 256-2048 per side, ratios up to 6:1
+- Qwen2.1, Ideogram  2048x2048 (4.0 MP)  cap 2048 - pre-split alias (existing workflows)
+- 4K             2880x2880 (7.91 MP)   cap off
+- 3072x          3072x3072 (9.0 MP)    cap off
+- 8K             5760x5760 (31.64 MP)  cap off
+- 16K            11520x11520 (126.56 MP) cap off
+
+Pick the downscale factor the model's VAE/patch size requires
 (e.g. 16 for FLUX.1 / Qwen-Image 1.x, 32 for Qwen-Image 2.x / GLM-Image).
 
 The optional `model` input (connect the same MODEL chain that feeds your
@@ -49,32 +64,47 @@ class HWPAspectSize:
     RETURN_NAMES = ("width", "height", "latent")
     FUNCTION = "run"
 
-    # model_type -> base (square) pixel budget.
+    # model_type -> (base (square) pixel budget, max side in px, 0 = uncapped).
+    # The max side keeps the aspect-ratio math from stretching the long side
+    # past what the model family handles: with the budget constant, extreme
+    # ratios make the width grow without bound and the model starts repeating
+    # the content. Caps are the documented limits per model family, except
+    # QWEN, whose cap (2048) is measured rather than documented: the official
+    # Qwen-Image/2512 sizes are native 1328 with the published list topping
+    # out at 1664 (16:9 = 1664x928); at 5:1, 2400 was clean with a 3-field
+    # concatenated prompt but duplicated with a single prompt field, 2048
+    # was clean in both, and 2656 = 2x native 1328 always duplicates. 2048
+    # (widest verified-clean width) is applied as the long-side cap at ALL
+    # ratios - mild ratios never reach the cap anyway. The generic budgets
+    # (1440x/4K/3072x/8K/16K) stay uncapped.
     # Names must not contain "/" (combo renders it as a submenu); use ", " instead.
-    # Several entries share a budget (e.g. "Qwen2.1, Ideogram" covers Qwen-Image 2.x,
-    # Ideogram 4 / 4.5, Ming-Image 0.1 and Kandinsky Cascade — all native 2K/2048x2048);
-    # the README documents which model lives under which preset.
+    # The "SDXL, FLUX" and "Qwen2.1, Ideogram" entries are the pre-split names,
+    # kept so existing workflows keep working (conservative common cap).
     # ordered by ascending base budget
-    MODEL_PIXELS = {
-        "SD 1.5": 512 * 512,
-        "SD 2.1": 768 * 768,
-        "SDXL, FLUX": 1024 * 1024,
-        "QWEN": 1328 * 1328,
-        "1440x": 1440 * 1440,
-        "WAN22": 1536 * 1536,
-        "Qwen2.1, Ideogram": 2048 * 2048,
-        "4K": 2880 * 2880,
-        "3072x": 3072 * 3072,
-        "8K": 5760 * 5760,
-        "16K": 11520 * 11520,
+    MODEL_SPECS = {
+        "SD 1.5": (512 * 512, 1024),
+        "SD 2.1": (768 * 768, 1152),
+        "SDXL": (1024 * 1024, 1536),
+        "FLUX.1": (1024 * 1024, 0),
+        "SDXL, FLUX": (1024 * 1024, 1536),
+        "QWEN": (1328 * 1328, 2048),
+        "1440x": (1440 * 1440, 0),
+        "WAN22": (1536 * 1536, 1440),
+        "Qwen2.1": (2048 * 2048, 2752),
+        "Ideogram": (2048 * 2048, 2048),
+        "Qwen2.1, Ideogram": (2048 * 2048, 2048),
+        "4K": (2880 * 2880, 0),
+        "3072x": (3072 * 3072, 0),
+        "8K": (5760 * 5760, 0),
+        "16K": (11520 * 11520, 0),
     }
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model_type": (list(cls.MODEL_PIXELS), {
-                    "tooltip": "Base pixel budget (width × height at 1:1) — the aspect ratio only changes the shape, the total stays constant.",
+                "model_type": (list(cls.MODEL_SPECS), {
+                    "tooltip": "Base pixel budget (width × height at 1:1) plus the model family's max side — the aspect ratio only changes the shape, and extreme ratios get scaled down so the long side never exceeds the model's limit.",
                 }),
                 "aspect_ratio_width": ("INT", {"default": 1, "min": 1, "step": 1, "display": "number",
                     "tooltip": "Aspect ratio, width part (free integer, e.g. 5 for 5:2)."}),
@@ -103,19 +133,36 @@ class HWPAspectSize:
         }
 
     def run(self, model_type, aspect_ratio_width, aspect_ratio_height, downscale_factor, batch_size, unique_id, model=None):
-        if model_type not in self.MODEL_PIXELS:
+        if model_type not in self.MODEL_SPECS:
             raise ValueError(f"Unknown model_type: {model_type!r}")
         if aspect_ratio_width < 1 or aspect_ratio_height < 1:
             raise ValueError("aspect ratio factors must be >= 1")
         if downscale_factor < 1:
             raise ValueError("downscale_factor must be >= 1")
 
-        pixels = self.MODEL_PIXELS[model_type]
+        pixels, max_side = self.MODEL_SPECS[model_type]
 
         # Keep the model's total pixel budget, change only the shape
         ratio = aspect_ratio_width / aspect_ratio_height
         width = math.sqrt(pixels * ratio)
         height = pixels / width
+
+        # Cap the long side: at extreme ratios the constant budget makes the
+        # width grow past what the model family handles, and the content
+        # starts repeating. Mild ratios never reach the cap.
+        capped = False
+        if max_side > 0 and max(width, height) > max_side:
+            # Pin the long side to the cap and re-derive the short side from
+            # the ratio: exact values land on the rounding grid instead of
+            # drifting over it by float error (e.g. SDXL 24:10 -> 640.0000001
+            # would round up to 648).
+            capped = True
+            if width >= height:
+                width = max_side
+                height = max_side / ratio
+            else:
+                height = max_side
+                width = max_side * ratio
 
         # Round both dimensions UP to multiples of the downscale factor
         width = math.ceil(width / downscale_factor) * downscale_factor
@@ -126,7 +173,7 @@ class HWPAspectSize:
         # ComfyUI; older versions simply skip it instead of erroring)
         prompt_server = getattr(server.PromptServer, "instance", None)
         if prompt_server is not None and hasattr(prompt_server, "send_progress_text"):
-            prompt_server.send_progress_text(f"{width}x{height}", unique_id)
+            prompt_server.send_progress_text(f"{width}x{height} (capped)" if capped else f"{width}x{height}", unique_id)
 
         # Also emit a ready-to-use empty LATENT at the resolved size.
         latent = torch.zeros(

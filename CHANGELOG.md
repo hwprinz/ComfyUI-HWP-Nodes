@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.9.10] - 2026-10-05
+
+### Added
+- **HWP Aspect Size**: per-preset **max side** baked into the size math. Each model preset now carries a max side in pixels in addition to its pixel budget: at extreme aspect ratios the constant budget makes the long side grow past what the model family handles (Qwen-Image-2512 starts duplicating content at 2656 = 2× native 1328, while 2400 renders clean), so the long side is scaled down to the cap before rounding. The resolved size shows a `(capped)` suffix below the node when the cap engaged. Caps: `SD 1.5` 1024 (2× native), `SD 2.1` 1152 (1.5× native), `SDXL` 1536 (documented optimal buckets, 1536×640 @ 2.4:1), `QWEN` 2048 (measured, applied as the long-side cap at all ratios — the official Qwen-Image specs are native 1328 with the published size list topping out at 1664, 16:9 = 1664×928; at 5:1, 2400 was clean with a 3-field concatenated prompt but duplicated with a single prompt field, 2048 was clean in both, 2656 = 2× native duplicated in both), `WAN22` 1440 (hosted T2I 512–1440 per side), `Qwen2.1` 2752 (model card widescreen 2752×1536), `Ideogram` 2048 (256–2048 per side, ratios up to 6:1).
+
+### Changed
+- **HWP Aspect Size**: the `SDXL, FLUX` preset splits into `SDXL` (cap 1536) and `FLUX.1` (uncapped — no documented limit), and `Qwen2.1, Ideogram` splits into `Qwen2.1` (cap 2752) and `Ideogram` (cap 2048) — the max sides of the families differ, so they can no longer share one entry. The old combined names are kept as aliases (conservative common cap) so existing saved workflows keep working unchanged. The generic `1440x`/`4K`/`3072x`/`8K`/`16K` budgets stay uncapped — the escape hatch for going past a family cap.
+
 ## [0.9.9] - 2026-10-04
 
 ### Added
