@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- **HWP Aspect Size** (README): remove the leftover `Qwen2.1, Ideogram` row from the preset table — leftover from the v0.9.10 split; the alias is already explained in the note under the table, and it stays in the node menu so old workflows keep working.
+
 ## [0.9.10] - 2026-10-05
 
 ### Added
