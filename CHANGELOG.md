@@ -7,8 +7,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Fixed
-- **HWP Aspect Size** (README): remove the leftover `Qwen2.1, Ideogram` row from the preset table — leftover from the v0.9.10 split; the alias is already explained in the note under the table, and it stays in the node menu so old workflows keep working.
+### Added
+- **HWP Aspect Size**: **Z-Image**, **Krea 2** and **FLUX.2** in the preset menu and README. All three share the 1024² / uncapped values of the `FLUX.1` family, so they are comma-joined into one entry: `FLUX.1, Z-Image, Krea 2, FLUX.2`. **Krea 2** is re-filed out of the `SDXL` bucket into this one — it uses the Qwen-Image VAE (16 ch / 8, downscale factor 16), not the SDXL 4 ch / 8 layout, which is why its downscale factor had been unclear before.
+
+### Changed
+- **HWP Aspect Size**: the `latent` output with **no model connected** now matches the built-in `EmptySD3LatentImage` (16 ch, 1/8, plus the `downscale_ratio_spacial` tag) instead of `Empty Latent Image` (4 ch, 1/8). The built-in `KSampler` / `SamplerCustomAdvanced` normalise the channel count to the model the latent is fed, so 4-ch models (SD 1.5 / SDXL) are unaffected, and 16 ch / 8 models (FLUX.1 / SD3 / Z-Image / Krea 2) now get a directly usable latent even with custom samplers.
+- **HWP Aspect Size**: `downscale_factor` tooltip now lists Z-Image and Krea 2 (factor 16) and FLUX.2 (factor 32).
+
+### Removed
+- **HWP Aspect Size**: the legacy combined presets `SDXL, FLUX` and `Qwen2.1, Ideogram` are out of the node menu and the README preset table — pre-split aliases left over from the v0.9.10 split. Saved workflows using them need to re-pick the split entries (`SDXL` / `FLUX.1, Z-Image, Krea 2, FLUX.2` and `Qwen2.1` / `Ideogram`).
 
 ## [0.9.10] - 2026-10-05
 
