@@ -149,7 +149,7 @@ An advanced terminal save node modeled on LayerStyle's `SaveImage Plus (Advanced
 | `quality` | INT | `100` | See the per-format table below — hidden in the UI when the format ignores it (`webp (lossless)`, `tiff`, `ico`) |
 | `ico_sizes` | ENUM | `Medium (64, 128, 256)` | ICO resolution preset — hidden in the UI until `format` is `ico` (the value is still sent and ignored for other formats) |
 | `meta_data` | BOOLEAN | `False` | Embed the workflow prompt + metadata (PNG text chunks, or EXIF `UserComment` JSON for jpg/webp/tiff). Honours the core `--disable-metadata` flag. ICO cannot store metadata (a warning is logged) |
-| `blind_watermark` | STRING | `""` | Text to embed invisibly (QR payload spread across the full RGB image — lossless PNG output preserves it). Extractable with the [`blind_watermark`](https://pypi.org/project/blind-watermark/) library using `password_img=1`, `password_wm=1`; images too small to carry the payload are saved without it (a warning is logged) |
+| `blind_watermark` | STRING | `""` | Text to embed invisibly. The QR payload is kept in the chroma (U/V) channels only — luma is left untouched, so flat regions like sky/wall stay clean and the mark is imperceptible. Lossless PNG output (and JPG at 4:4:4) preserve it. Extractable with the [`blind_watermark`](https://pypi.org/project/blind-watermark/) library using `password_img=1`, `password_wm=1`; images too small to carry the payload are saved without it (a warning is logged) |
 | `preview` | BOOLEAN | `True` | Show a result image in the UI. When saving to a `custom_path` the real files land there and a PNG preview is shown instead (saved to temp) |
 
 **No output.** This is a terminal node.

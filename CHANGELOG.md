@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.11] - 2026-10-07
 
 ### Added
 - **HWP Aspect Size**: **Z-Image**, **Krea 2** and **FLUX.2** in the preset menu and README. All three share the 1024² / uncapped values of the `FLUX.1` family, so they are comma-joined into one entry: `FLUX.1, Z-Image, Krea 2, FLUX.2`. **Krea 2** is re-filed out of the `SDXL` bucket into this one — it uses the Qwen-Image VAE (16 ch / 8, downscale factor 16), not the SDXL 4 ch / 8 layout, which is why its downscale factor had been unclear before.
@@ -16,6 +16,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ### Removed
 - **HWP Aspect Size**: the legacy combined presets `SDXL, FLUX` and `Qwen2.1, Ideogram` are out of the node menu and the README preset table — pre-split aliases left over from the v0.9.10 split. Saved workflows using them need to re-pick the split entries (`SDXL` / `FLUX.1, Z-Image, Krea 2, FLUX.2` and `Qwen2.1` / `Ideogram`).
+
+### Fixed
+- **HWP Save Image (Advanced)**: the blind watermark no longer leaves blocky noise in flat regions (sky, wall). It was embedding the DCT watermark into the luma channel as well as the chroma channels; luma is now restored after embedding, so the QR lives in the U/V chroma channels only — imperceptible, and still fully extractable with the `blind_watermark` library (verified ~93–100% QR recovery across PNG and JPEG-4:4:4, higher on smooth images).
 
 ## [0.9.10] - 2026-10-05
 

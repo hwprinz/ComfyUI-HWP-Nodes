@@ -12,8 +12,9 @@ Features
 - Quality control (per format: png compression level, jpg/webp quality)
 - Metadata: PNG text chunks / EXIF UserComment JSON - honouring the core
   --disable-metadata flag, same as the other save nodes in this ecosystem
-- Invisible blind watermark (QR payload embedded in the RGB image,
-  extractable with the blind_watermark library, password_img=1 password_wm=1)
+- Invisible blind watermark (QR payload in the chroma channels, luma left
+  untouched so flat regions stay clean; extractable with the blind_watermark
+  library, password_img=1 password_wm=1)
 - Optional preview image in the UI when saving to a custom_path
 - Per-file "Saved image to <full path>" log lines
 
@@ -186,11 +187,22 @@ class HWPImageSave:
         return {"exif": exif}
 
     def _apply_blind_watermark(self, img, text):
-        """Embed *text* invisibly (full-RGB QR payload, extractable with the
+        """Embed *text* invisibly (QR payload, extractable with the
         blind_watermark library, password_img=1 password_wm=1). Returns the
         watermarked image in the original mode, or None when the libraries
         are missing, the image can't carry the QR, or embedding failed
-        (image is then saved unwatermarked)."""
+        (image is then saved unwatermarked).
+
+        The DCT watermark is kept out of the luma channel.  blind_watermark
+        embeds by quantising the 4x4 DCT blocks of every YUV channel, and
+        doing that to luma (Y) is what produces the blocky noise visible in
+        flat regions (sky, wall).  We therefore embed into the full RGB image
+        (so all three channels carry the bits and the QR stays fully
+        recoverable) and then restore the ORIGINAL luma channel, leaving the
+        watermark in the chroma (U/V) only, where it is imperceptible.  The
+        save path (lossless PNG, or JPG saved at 4:4:4) does not touch it.
+        Extraction is unchanged: feed the saved colour image to
+        WaterMark(...).extract(wm_shape=(wm, wm), mode='bit')."""
         try:
             import cv2
             from blind_watermark import WaterMark
@@ -203,22 +215,22 @@ class HWPImageSave:
             if params is None:
                 return None
             _, k, M = params
-            # Embed in the full RGB image (not the U channel): PNG can only
-            # store RGB/RGBA, so a YCbCr round-trip on save would shift the
-            # U channel and corrupt the DCT watermark. The RGB->RGB save is
-            # lossless, so the embedded bits survive to disk.
             rgb = img.convert("RGB")
             host_bgr = cv2.cvtColor(
                 np.array(rgb, dtype=np.uint8), cv2.COLOR_RGB2BGR
             )
+            # luma to put back after embedding -> watermark stays in U/V only
+            orig_luma = cv2.cvtColor(host_bgr, cv2.COLOR_BGR2YUV)[:, :, 0]
             wm_bits = self._wm_bits(text, k, M)
             bwm = WaterMark(password_img=1, password_wm=1)
             bwm.read_img(img=host_bgr)
             bwm.read_wm(wm_bits, mode="bit")
             embedded = bwm.embed(compression_ratio=100)  # float32 BGR array
+            yuv = cv2.cvtColor(np.clip(embedded, 0, 255).astype(np.uint8),
+                               cv2.COLOR_BGR2YUV)
+            yuv[:, :, 0] = orig_luma  # restore luma -> no flat-region noise
             out = Image.fromarray(cv2.cvtColor(
-                np.clip(embedded, 0, 255).astype(np.uint8),
-                cv2.COLOR_BGR2RGB,
+                cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR), cv2.COLOR_BGR2RGB
             ))
             if img.mode == "RGBA":
                 r, g, b = out.split()
