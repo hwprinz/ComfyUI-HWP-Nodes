@@ -234,14 +234,19 @@ class CustomGlobalSeed:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "value": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "value": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff,
+                            "tooltip": "Base seed. The resolved value is broadcast to every seed / seed_num / noise_seed int widget in the workflow, and $GlobalSeed.value$ inside any string input is replaced with it. The noise output is NOT broadcast - wire it to a NOISE input."}),
             },
             "optional": {
-                "mode": ("BOOLEAN", {"default": True, "label_on": "control_before_generate", "label_off": "control_after_generate"}),
-                "action": (["fixed", "increment", "decrement", "randomize", "increment for each node", "decrement for each node", "randomize for each node"],),
-                "last_seed": ("STRING", {"default": "", "multiline": False}),
+                "mode": ("BOOLEAN", {"default": True, "label_on": "control_before_generate", "label_off": "control_after_generate",
+                                     "tooltip": "control_before_generate: the next seed is computed before the prompt runs, so this run uses the new value. control_after_generate: this run uses the current value and the next one is prepared for the following queue."}),
+                "action": (["fixed", "increment", "decrement", "randomize", "increment for each node", "decrement for each node", "randomize for each node"], {
+                    "tooltip": "How the seed advances. fixed keeps the value; increment / decrement / randomize move it once per run. The 'for each node' variants give every downstream seed widget its own successive value (value, value+1, value+2, ...)."}),
+                "last_seed": ("STRING", {"default": "", "multiline": False,
+                                         "tooltip": "Shows the seed used by the previous run - rewritten only when the seed actually changed, so repeated runs of the same seed leave it untouched. Editable: type a seed here to keep it as a note."}),
                 "max_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "tooltip": "Maximum seed value (0 = default: 1125899906842624)"}),
-                "logging": ("BOOLEAN", {"default": False, "label_on": "verbose", "label_off": "default"}),
+                "logging": ("BOOLEAN", {"default": False, "label_on": "verbose", "label_off": "default",
+                                        "tooltip": "default logs one summary line per run; verbose also logs every per-node seed update."}),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",

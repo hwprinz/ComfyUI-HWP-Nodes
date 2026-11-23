@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **HWP Global Seed** and **HWP Seed Node**: hover tooltips on every widget (the same mechanism the HWP Aspect Size tooltips have used since v0.9.9) - the base seed and how it reaches the rest of the workflow (**broadcast** on HWP Global Seed, **wired only** on HWP Seed Node, and the `noise` output is always wired on both), the `control_before_generate` / `control_after_generate` timing, the seed actions including the `... for each node` variants, the `last_seed` field, and the verbose logging toggle. Frontend only - no behaviour change, no version bump.
+
+### Changed
+- **Documentation**: the “Finding the nodes” screenshot is refreshed - it now shows all 6 nodes of the pack (HWP Seed Node, HWP Save Image (Advanced), HWP Aspect Size, HWP Global Seed, HWP Get Side (X/Y), HWP Get Side (Latent)).
+
 ## [0.9.11] - 2026-10-07
 
 ### Added
