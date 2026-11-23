@@ -12,6 +12,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - **Documentation**: the “Finding the nodes” screenshot is refreshed - it now shows all 6 nodes of the pack (HWP Seed Node, HWP Save Image (Advanced), HWP Aspect Size, HWP Global Seed, HWP Get Side (X/Y), HWP Get Side (Latent)).
+- **Documentation (OPEN - do this before the next release / version bump)**: add an **HWP Aspect Size** node screenshot. It is the only node of the pack with no image in the README; ideally it shows the `(capped)` status line below the node (the v0.9.10 per-preset max side). The screenshot is user-taken - once it arrives, put it in `screenshots/` and reference it from the Aspect Size section.
 
 ## [0.9.11] - 2026-10-07
 
